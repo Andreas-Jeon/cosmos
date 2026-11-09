@@ -1,0 +1,815 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#141413">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Cosmos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#141413;--panel:#1C1C1A;--line:#30302D;--text:#ECECE8;--sub:#A4A49D;--mute:#8B8B85;--khaki:#A8A66A;--khaki-l:#C9C68A;--orange:#C98A5B;--sky:#0D0D0C}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans KR','Malgun Gothic',sans-serif;font-size:14px}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.app{display:grid;grid-template-rows:auto 1fr;height:100%}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:14px 20px;border-bottom:1px solid var(--line)}
+.brand{font-size:20px;font-weight:700;letter-spacing:.08em}
+.search{margin-left:auto;width:320px;max-width:100%;height:38px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel)}
+.search::placeholder{color:var(--mute)}
+.stamp{font-size:12px;color:var(--mute)}
+main{display:grid;grid-template-columns:minmax(0,1fr) 420px;min-height:0}
+.sky{position:relative;min-height:0;background:var(--sky)}
+.sky canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.chips{position:absolute;left:14px;top:14px;right:70px;display:flex;flex-wrap:wrap;gap:6px}
+.chip{min-height:36px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:rgba(20,20,19,.85);cursor:pointer;font-size:13px}
+.chip[aria-pressed="true"]{border-color:var(--orange);background:#2A2420}
+.chip .n{color:var(--mute);margin-left:6px;font-size:12px}
+.zoom{position:absolute;right:14px;bottom:14px;display:flex;flex-direction:column;gap:6px}
+.zoom button[aria-pressed="true"]{border-color:var(--orange)}
+.zoom button{width:40px;height:40px;border-radius:8px;border:1px solid var(--line);background:rgba(28,28,26,.9);cursor:pointer;font-size:18px}
+.hint{position:absolute;left:14px;bottom:14px;font-size:12px;color:var(--mute)}
+aside{border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:20px 22px 40px}
+aside h2{margin:0 0 4px;font-size:18px;font-weight:500}
+.path{font-size:12px;color:var(--mute);word-break:break-all}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 16px}
+.tag{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:2px 8px;color:var(--sub)}
+.tag.warn{border-color:var(--orange);color:var(--orange)}
+.sec{margin:20px 0 8px;font-size:13px;color:var(--sub)}
+.list{display:flex;flex-direction:column}
+.item{display:block;width:100%;text-align:left;padding:9px 10px;border:0;border-top:1px solid var(--line);background:none;cursor:pointer}
+.item:hover{background:#242422}
+.item small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
+.empty{color:var(--mute);font-size:13px;line-height:1.7}
+.back{border:0;background:none;color:var(--orange);cursor:pointer;padding:0;margin-bottom:12px;font-size:13px}
+.md{line-height:1.75;font-size:14px}
+.md h1,.md h2,.md h3,.md h4{font-weight:500;margin:20px 0 6px}
+.md h1{font-size:18px}.md h2{font-size:16px}.md h3,.md h4{font-size:14px;color:var(--sub)}
+.md p{margin:6px 0}
+.md ul{margin:4px 0;padding-left:18px}
+.md blockquote{margin:8px 0;padding:6px 12px;border-left:2px solid var(--khaki);color:var(--sub)}
+.md table{border-collapse:collapse;width:100%;font-size:13px;margin:8px 0;display:block;overflow-x:auto}
+.md th,.md td{border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+.md th{color:var(--sub);font-weight:500}
+.md code{background:#262624;padding:1px 5px;border-radius:4px;font-size:13px}
+.md pre{background:#262624;padding:10px;border-radius:8px;overflow-x:auto;font-size:12px;line-height:1.5}
+.md a{color:var(--orange);cursor:pointer}
+.md .own{color:var(--khaki-l)}
+.md .gap{color:var(--orange)}
+.fm{font-size:12px;color:var(--sub);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:10px}
+.fm div{display:flex;gap:8px}.fm b{font-weight:500;color:var(--mute);min-width:90px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:10px}
+.stat .v{font-size:20px;font-weight:500}.stat .l{font-size:12px;color:var(--mute)}
+.facets{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+.facet{min-height:30px;padding:0 10px;border-radius:6px;border:1px solid var(--line);background:none;cursor:pointer;font-size:12px;color:var(--sub)}
+.facet[aria-pressed="true"]{border-color:var(--orange);color:var(--text)}
+.facet .n{color:var(--mute);margin-left:4px}
+.imp{color:var(--khaki-l);font-size:12px;letter-spacing:-1px}
+.item mark{background:none;color:var(--orange);font-weight:500}
+.item .snip{display:block;color:var(--sub);font-size:12px;margin-top:3px;line-height:1.5}
+.more{width:100%;min-height:38px;margin-top:6px;border:1px solid var(--line);border-radius:8px;background:none;cursor:pointer;color:var(--sub)}
+.qhint{font-size:12px;color:var(--mute);line-height:1.6;margin:6px 0 0}
+@media (max-width:900px){main{grid-template-columns:1fr;grid-template-rows:60vh auto}aside{border-left:0;border-top:1px solid var(--line)}}
+
+/* ---- mobile ---- */
+.hdbtn{border:1px solid var(--line);background:none;border-radius:8px;min-width:36px;height:36px;cursor:pointer;color:var(--sub)}
+.ldbanner{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:9;min-height:44px;border-radius:10px;border:1px solid var(--orange);background:#2A2420;color:var(--text);font-size:14px}
+@media (max-width:900px){
+ .app{height:100dvh}
+ header{padding:10px 12px;gap:8px;padding-top:calc(10px + env(safe-area-inset-top))}
+ .brand{font-size:17px}
+ .stamp{margin-left:auto;font-size:11px}
+ .search{order:9;width:100%;margin-left:0;height:42px;font-size:16px}
+ main{grid-template-rows:44dvh minmax(0,1fr)}
+ main.skybig{grid-template-rows:78dvh minmax(0,1fr)}
+ aside{padding:14px 14px calc(40px + env(safe-area-inset-bottom))}
+ .chips{left:8px;top:8px;right:54px;gap:4px;max-height:46%;overflow:hidden}
+ .chip{min-height:30px;padding:0 8px;font-size:12px}
+ .zoom{right:8px;bottom:8px}
+ .hint{display:none}
+ .item{padding:12px 8px}
+ .facet{min-height:34px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <a class="brand" href="./" style="color:inherit;text-decoration:none">← Cosmos</a>
+  <input class="search" id="q" type="search" placeholder="낱말 여러 개로 좁혀 찾기 (예: 태양 교정)" aria-label="검색">
+  <span class="stamp" id="stamp"></span><button class="hdbtn" onclick="cosmosRefresh()" aria-label="OneDrive에서 다시 받기" title="OneDrive에서 다시 받기">↻</button><button class="hdbtn" onclick="cosmosLogout()" aria-label="로그아웃" title="로그아웃">⏻</button>
+</header>
+<main>
+  <section class="sky" aria-label="지식 은하">
+    <canvas id="cv" role="img" aria-label="Cosmos 폴더의 파일로 그린 은하. 중심은 나와 대문, 항성은 층, 행성은 파일"></canvas>
+    <div class="chips" id="chips"></div>
+    <div class="zoom"><button id="zbig" aria-label="크게 보기" onclick="document.querySelector('main').classList.toggle('skybig')">⤢</button><button id="zspin" aria-label="회전 켜기·끄기" aria-pressed="false" title="회전">⟳</button><button id="zin" aria-label="확대">+</button><button id="zout" aria-label="축소">−</button></div>
+    <div class="hint">끌어서 돌리기 · 두 손가락으로 확대 · 이름을 누르면 열림</div>
+  </section>
+  <aside id="panel" aria-live="polite"></aside>
+</main>
+</div>
+<script src="msal-browser.min.js"></script>
+<script type="text/plain" id="cosmos-main">
+(function(){
+"use strict";
+const DATA = window.COSMOS_DATA;
+const panel = document.getElementById('panel');
+if (!DATA) {
+  panel.innerHTML = '<h2>색인이 없음</h2><p class="empty">업무 PC에서 Cosmos_open.bat 를 한 번 실행해 색인(data.js)을 만든 뒤 OneDrive 동기화가 끝나면 열림.</p>';
+  return;
+}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+document.getElementById('stamp').textContent = '색인 ' + DATA.generated;
+
+const SYS = [
+  {key:'principles', name:'원리', r:520, ph:0.3, col:'#A8A66A'},
+  {key:'cases', name:'사례', r:760, ph:1.9, col:'#D8D8D2'},
+  {key:'capabilities', name:'역량', r:1000, ph:3.4, col:'#C4C4BE'},
+  {key:'work', name:'일', r:1240, ph:4.6, col:'#C4C4BE'},
+  {key:'base', name:'삶의 기반', r:1460, ph:5.7, col:'#C4C4BE'},
+  {key:'library', name:'자료', r:1680, ph:2.6, col:'#B0B0AA'},
+  {key:'tools', name:'도구 상자', r:1680, ph:0.9, col:'#B0B0AA'}
+];
+const FILES = DATA.files;
+const byPath = {}, byName = {};
+FILES.forEach(f => { byPath[f.path.replace(/\.md$/,'')] = f; (byName[f.name] = byName[f.name] || []).push(f); });
+const SRC = DATA.sources || [];
+const ITEMS = [], itemByName = {};
+/* 중요도: 파일 이름 앞의 [중요] 표시. '중요'와 '매우'가 반복될수록 높음 ([중요]=1, [중요중요]·[매우중요]=2, [매우매우중요]=3) */
+const impOf = name => {
+  const m = String(name).match(/^\s*((?:\[[^\]]*\]\s*_?\s*)+|중요[_ ])/); if (!m) return 0;
+  const tag = m[1].split(']').filter(t => /중요/.test(t)).join(' ');
+  return Math.min(5, (tag.match(/중요/g) || []).length + (tag.match(/매우/g) || []).length);
+};
+const stars = n => n ? '<span class="imp" title="중요 표시 ' + n + '단계">' + '★'.repeat(n) + '</span> ' : '';
+SRC.forEach((s, si) => s.items.forEach(it => { it.src = s.label; it.si = si; it.isItem = true; it.title = (it.meta && it.meta.t) || it.name; it.imp = impOf(it.name); it.fields = (it.meta && it.meta.f) || []; it.works = (it.meta && it.meta.w) || []; it.kws = (it.meta && it.meta.k) || []; ITEMS.push(it); (itemByName[it.name.toLowerCase()] = itemByName[it.name.toLowerCase()] || []).push(it); }));
+const resolve = l => { l = l.trim(); const base = l.replace(/\.md$/,''); const md = byPath[base] || (byName[base.split('/').pop()] || [])[0]; if (md) return md; const nm = l.split('/').pop().replace(/\.(pdf|url|docx?|pptx?|hwpx?|xlsx?|txt|html?)$/i,'').toLowerCase(); return (itemByName[nm] || [])[0] || null; };
+const keyOf = x => x.isItem ? 'item:' + x.full : x.path;
+const CL = [];
+/* 큰 분야 6개 (TMI 폴더 10~60 과 같은 순서) */
+const GROUPS = [
+  {name:'우주환경·전파천문', tags:['우주환경·태양전파','전파천문','전파전파·강우감쇠']},
+  {name:'레이다·영상', tags:['레이다 시스템','SAR·검보정','우주상황인식','국방·전자전']},
+  {name:'안테나·RF', tags:['안테나·RF부품','방향탐지·전파감시']},
+  {name:'위성·지상국', tags:['위성·지상국']},
+  {name:'신호처리·계측', tags:['신호처리','측정·시험장비']},
+  {name:'정책·사업', tags:['주파수·전파정책','기술기획·사업']}
+];
+const groupOfTag = t => GROUPS.findIndex(g => g.tags.includes(t));
+const groupIdx = c => c.name.startsWith('개발 · ') ? 4 : groupOfTag(c.name);
+const HAS_TAGS = ITEMS.some(it => it.fields.length);
+let clMode = HAS_TAGS ? 'field' : 'folder';
+/* 성단 묶음: 분야(태그 첫 번째) 또는 폴더. 태그 없는 자료는 폴더 이름으로 묶음 */
+function buildClusters(mode){
+  clMode = mode; CL.length = 0;
+  SRC.forEach((s, si) => {
+    const g = {};
+    s.items.forEach(it => { const k = it.docs ? '개발 · ' + it.topic : (mode === 'field' && it.fields.length) ? it.fields[0] : (mode === 'field' ? '태그 없음' : it.topic); (g[k] = g[k] || []).push(it); });
+    Object.keys(g).sort((a,b) => (a.startsWith('태그 없음') - b.startsWith('태그 없음')) || g[b].length - g[a].length).forEach(t => CL.push({src:s.label, si, name:t, items:g[t]}));
+  });
+  /* 분야 모드: 큰 분야 6개를 6개 나선팔로. 팔 안에서 분야 성단은 바깥으로 감기며 놓임 */
+  const armN = {};
+  CL.forEach((c, i) => {
+  const gi = mode === 'field' ? groupIdx(c) : -1;
+  if (gi >= 0) { const k = armN[gi] = (armN[gi] || 0) + 1; c.gi = gi; c.ph = gi / GROUPS.length * 6.283 + 0.25 + (k - 1) * 0.30; c.R = 1950 + (k - 1) * 330; c.y = ((k % 2) ? 1 : -1) * 50; }
+  else { c.gi = -1; c.ph = i / Math.max(1, CL.length) * 6.283 + 0.4; c.R = mode === 'field' ? 3350 + (i % 2) * 150 : 2150 + (i % 3) * 110; c.y = ((i % 2) ? 1 : -1) * 70; }
+  c.rc = clMode === 'field' ? 20 + 7 * Math.sqrt(c.items.length) : 14 + 4 * Math.sqrt(c.items.length);
+  c.items.forEach((it, k) => { let hh = 7; for (const ch of it.full) hh = (hh * 33 + ch.charCodeAt(0)) % 100003; const u = (hh % 1000) / 1000 * 2 - 1, th = ((hh / 1000 | 0) % 1000) / 1000 * 6.283, rr = c.rc * Math.cbrt(((hh * 7) % 997) / 997 + 0.02), s = Math.sqrt(1 - u * u); it.off = [rr * s * Math.cos(th), rr * u * 0.7, rr * s * Math.sin(th)]; it.ci = i; });
+  });
+}
+buildClusters(clMode);
+/* 업무·분야별 자료 목록 */
+const WORKS = {}, FIELDS = {};
+ITEMS.forEach(it => { it.works.forEach(w => (WORKS[w] = WORKS[w] || []).push(it)); it.fields.forEach(f => (FIELDS[f] = FIELDS[f] || []).push(it)); });
+const byImp = (a, b) => b.imp - a.imp || a.title.localeCompare(b.title);
+/* 관련 자료: 같은 키워드(3점) · 같은 업무(2점) · 같은 분야(1점), 같은 제목(사본)은 뺌 */
+function relatedOf(it, n){
+  if (!it.fields.length) return [];
+  const kw = new Set(it.kws.map(k => k.toLowerCase()));
+  return ITEMS.filter(o => o !== it && o.fields.length && o.title.toLowerCase() !== it.title.toLowerCase()).map(o => {
+    let sc = 0; o.kws.forEach(k => { if (kw.has(k.toLowerCase())) sc += 3; });
+    o.works.forEach(w => { if (it.works.includes(w)) sc += 2; });
+    o.fields.forEach(f => { if (it.fields.includes(f)) sc += 1; });
+    return {o, sc: sc + o.imp * .3};
+  }).filter(x => x.sc >= 3).sort((a, b) => b.sc - a.sc).slice(0, n).map(x => x.o);
+}
+/* 화면에서 함께 밝혀 줄 자료 묶음 (선으로 이음) */
+let HL = {set:new Set(), from:null};
+const setHL = (arr, from) => { HL = {set:new Set(arr), from}; };
+const incoming = {};
+FILES.forEach(f => f.links.forEach(l => { const t = resolve(l); if (t) (incoming[keyOf(t)] = incoming[keyOf(t)] || []).push(f); }));
+SYS.forEach(s => {
+  s.files = FILES.filter(f => f.layer === s.key && f.kind === 'file');
+  s.meta = FILES.filter(f => f.layer === s.key && f.kind === 'meta');
+  const n = s.files.length, span = Math.min(120, 15 * Math.max(n, 1));
+  s.pl = s.files.map((f, k) => {
+    const R = 34 + (n > 1 ? k * span / (n - 1) : 0);
+    let h = 0; for (const ch of f.path) h = (h * 31 + ch.charCodeAt(0)) % 997;
+    return {f, R, w: 2.0 * Math.pow(34 / R, 1.5), ph: h / 997 * 6.283, size: 3 + Math.min(3, f.size / 2500)};
+  });
+});
+FILES.forEach(f => { f.fields = f.fields || []; });
+const centerFile = FILES.find(f => f.path === 'AGENTS.md') || FILES.find(f => f.layer === 'center');
+
+/* ---------- chips ---------- */
+const chipsEl = document.getElementById('chips');
+const chipDefs = [{i:-1, name:'전체', n:FILES.filter(f=>f.kind==='file').length}].concat(SYS.map((s,i)=>({i, name:s.name, n:s.files.length}))).concat(SRC.map((s,k)=>({i:500+k, name:s.label, n:s.items.length})));
+chipDefs.forEach(c => {
+  const b = document.createElement('button'); b.className = 'chip'; b.dataset.i = c.i;
+  b.innerHTML = esc(c.name) + '<span class="n">' + c.n + '</span>';
+  b.addEventListener('click', () => { if (c.i >= 500) { flyTo(-3); showSource(c.i - 500); } else { flyTo(c.i); if (c.i < 0) showOverview(); else showSystem(c.i); } });
+  chipsEl.appendChild(b);
+});
+function markChip(i){ chipsEl.querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.i === i))); }
+
+/* ---------- markdown ---------- */
+function inline(s){
+  s = esc(s);
+  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\[\[(.+?)(?:\|([^\]]+))?\]\](?!\])/g, (m, a, b) => '<a data-link="' + a.trim() + '">' + (b || a.split('/').pop()) + '</a>');
+  s = s.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  s = s.replace(/\[직접[^\]]*\]/g, m => '<span class="own">' + m + '</span>');
+  s = s.replace(/_{6,}/g, '<span class="gap">______</span>');
+  return s;
+}
+function md(text){
+  const L = text.replace(/\r/g,'').split('\n'); let i = 0, out = '';
+  if (L[0] === '---') {
+    let j = 1, rows = '';
+    while (j < L.length && L[j] !== '---') { const m = L[j].match(/^([^:]+):\s*(.*)$/); if (m) rows += '<div><b>' + esc(m[1]) + '</b><span>' + inline(m[2]) + '</span></div>'; j++; }
+    out += '<div class="fm">' + rows + '</div>'; i = j + 1;
+  }
+  while (i < L.length) {
+    const l = L[i];
+    if (/^```/.test(l)) { let b = ''; i++; while (i < L.length && !/^```/.test(L[i])) { b += esc(L[i]) + '\n'; i++; } out += '<pre>' + b + '</pre>'; i++; continue; }
+    let m = l.match(/^(#{1,4})\s+(.*)$/); if (m) { out += '<h' + m[1].length + '>' + inline(m[2]) + '</h' + m[1].length + '>'; i++; continue; }
+    if (/^\s*\|/.test(l)) {
+      let rows = []; while (i < L.length && /^\s*\|/.test(L[i])) { rows.push(L[i]); i++; }
+      rows = rows.filter(r => !/^\s*\|[\s:|-]+\|\s*$/.test(r));
+      out += '<table>' + rows.map((r, k) => '<tr>' + r.trim().replace(/^\||\|$/g,'').split('|').map(c => (k ? '<td>' : '<th>') + inline(c.trim()) + (k ? '</td>' : '</th>')).join('') + '</tr>').join('') + '</table>';
+      continue;
+    }
+    if (/^\s*[-*]\s/.test(l)) { let b = ''; while (i < L.length && /^\s*[-*]\s/.test(L[i])) { b += '<li>' + inline(L[i].replace(/^\s*[-*]\s(\[ \]\s)?/, (x, c) => c ? '☐ ' : '')) + '</li>'; i++; } out += '<ul>' + b + '</ul>'; continue; }
+    if (/^>\s?/.test(l)) { let b = ''; while (i < L.length && /^>\s?/.test(L[i])) { b += inline(L[i].replace(/^>\s?/,'')) + ' '; i++; } out += '<blockquote>' + b + '</blockquote>'; continue; }
+    if (l.trim() === '') { i++; continue; }
+    out += '<p>' + inline(l) + '</p>'; i++;
+  }
+  return out;
+}
+
+/* ---------- panel views ---------- */
+let selected = null;
+const layerName = k => ({center:'나·대문', principles:'원리', cases:'사례', capabilities:'역량', work:'일', base:'삶의 기반', library:'자료', tools:'도구 상자', log:'기록', root:'Cosmos', other:'기타'})[k] || k;
+function itemHtml(f){
+  if (f.isItem) return '<button class="item" data-full="' + esc(f.full) + '">' + stars(f.imp) + esc(f.name) + '<small>' + esc((f.fields[0] ? f.fields[0] + ' · ' : '') + (f.folder || '(최상위)') + ' · ' + f.ext.slice(1).toUpperCase()) + '</small></button>';
+  return '<button class="item" data-path="' + esc(f.path) + '">' + esc(f.title) + '<small>' + esc(layerName(f.layer)) + ' · ' + esc(f.mtime) + '</small></button>';
+}
+const itemByFull = {}; ITEMS.forEach(it => itemByFull[it.full] = it);
+function bindItems(){ panel.querySelectorAll('.item').forEach(b => b.addEventListener('click', () => b.dataset.full ? openItem(itemByFull[b.dataset.full]) : openFile(FILES.find(f => f.path === b.dataset.path)))); }
+const fileUrl = p => 'file:///' + p.replace(/\\/g,'/').split('/').map(encodeURIComponent).join('/').replace(/^([A-Za-z])%3A/,'$1:');
+const fmtSize = n => n > 1048576 ? (n/1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n/1024)) + ' KB';
+function showSource(k){
+  const s = SRC[k]; selected = null; setHL([]); markChip(500 + k);
+  const cls = CL.filter(c => c.si === k);
+  panel.innerHTML = '<h2>' + esc(s.label) + '</h2><p class="path">' + esc(s.root) + '</p>' +
+    '<div class="stats"><div class="stat"><div class="v">' + s.items.filter(i=>i.ext==='.pdf').length + '</div><div class="l">PDF</div></div>' +
+    '<div class="stat"><div class="v">' + s.items.filter(i=>i.ext==='.url').length + '</div><div class="l">웹링크</div></div>' +
+    '<div class="stat"><div class="v">' + cls.length + '</div><div class="l">주제 성단</div></div></div>' +
+    (HAS_TAGS ? '<div class="facets"><button class="facet" id="mfield" aria-pressed="' + (clMode === 'field') + '">분야별 성단</button><button class="facet" id="mfolder" aria-pressed="' + (clMode === 'folder') + '">폴더별 성단</button></div>' : '') +
+    '<div class="sec">' + (clMode === 'field' ? '분야 성단' : '폴더 성단') + ' (자료 많은 순)</div><div class="list">' +
+    cls.slice().sort((a, b) => (a.gi < 0) - (b.gi < 0) || a.gi - b.gi).map((c, k, arr) => (clMode === 'field' && c.gi >= 0 && (k === 0 || arr[k - 1].gi !== c.gi) ? '<div class="sec" style="margin-top:14px">' + esc((c.gi + 1) + '. ' + GROUPS[c.gi].name) + '</div>' : '') + '<button class="item" data-ci="' + CL.indexOf(c) + '">' + esc(c.name) + '<small>' + c.items.length + '개' + (c.items.some(x => x.imp) ? ' · ★ ' + c.items.filter(x => x.imp).length : '') + '</small></button>').join('') + '</div>' +
+    workListHtml();
+  panel.querySelectorAll('[data-ci]').forEach(b => b.addEventListener('click', () => { flyTo(1000 + +b.dataset.ci); showCluster(+b.dataset.ci); }));
+  const mf = document.getElementById('mfield'), mo = document.getElementById('mfolder');
+  if (mf) mf.addEventListener('click', () => { buildClusters('field'); showSource(k); });
+  if (mo) mo.addEventListener('click', () => { buildClusters('folder'); showSource(k); });
+  bindWorks();
+}
+function workListHtml(){
+  const ws = Object.keys(WORKS).sort((a, b) => WORKS[b].length - WORKS[a].length);
+  return ws.length ? '<div class="sec">업무와 연결된 자료</div><div class="list">' + ws.map(w => '<button class="item" data-work="' + esc(w) + '">' + esc(w) + '<small>' + WORKS[w].length + '개 자료' + (WORKS[w].some(x => x.imp) ? ' · ★ ' + WORKS[w].filter(x => x.imp).length : '') + '</small></button>').join('') + '</div>' : '';
+}
+function bindWorks(){
+  panel.querySelectorAll('[data-work]').forEach(b => b.addEventListener('click', () => showWork(b.dataset.work)));
+  panel.querySelectorAll('[data-field]').forEach(b => b.addEventListener('click', () => showField(b.dataset.field)));
+  panel.querySelectorAll('[data-group]').forEach(b => b.addEventListener('click', () => showGroup(+b.dataset.group)));
+}
+function showWork(w){
+  const list = (WORKS[w] || []).slice().sort(byImp); selected = null; setHL(list, 'center');
+  flyTo(-3);
+  panel.innerHTML = '<button class="back" id="back">← 전체</button><h2>' + esc(w) + '</h2><p class="path">업무와 연결된 자료 ' + list.length + '개 · 은하에서 주황색으로 밝혀지고 중심(나)과 선으로 이어짐</p>' +
+    '<div class="list">' + list.map(itemHtml).join('') + '</div>';
+  document.getElementById('back').addEventListener('click', () => { setHL([]); showOverview(); });
+  bindItems(); panel.scrollTop = 0;
+}
+/* 분야 하나의 흐름: 자료 → 원리 → 일 → 사례. 빈 칸이 바로 보이게 */
+function flowHtml(tags){
+  const notes = k => FILES.filter(n => n.kind === 'file' && n.layer === k && n.fields.some(t => tags.includes(t)));
+  const step = (title, arr, empty) => '<div class="sec">' + title + ' ' + arr.length + '</div>' + (arr.length ? '<div class="list">' + arr.map(itemHtml).join('') + '</div>' : '<p class="empty">' + empty + '</p>');
+  return step('원리 TM', notes('principles'), '아직 없음. 이 분야 사례가 2~3개 모이면 원리 TM으로 올릴 차례') +
+    step('일', notes('work'), '이 분야로 표시된 일 파일 없음 (일 파일 앞머리에 "분야:" 를 적으면 연결됨)') +
+    step('사례', notes('cases'), '아직 없음');
+}
+function showGroup(gi){
+  const g = GROUPS[gi], list = ITEMS.filter(it => it.fields.some(t => g.tags.includes(t))).sort(byImp); selected = null; setHL(list, null);
+  const ci = CL.findIndex(c => c.gi === gi); if (ci >= 0) flyTo(1000 + ci); else flyTo(-3);
+  panel.innerHTML = '<button class="back" id="back">← 전체</button><h2>' + esc(g.name) + '</h2><p class="path">자료 ' + list.length + '개 · ★ ' + list.filter(x => x.imp).length + '</p>' +
+    '<div class="facets">' + g.tags.filter(t => FIELDS[t]).map(t => '<button class="facet" data-field="' + esc(t) + '">' + esc(t) + '<span class="n">' + FIELDS[t].length + '</span></button>').join('') + '</div>' +
+    flowHtml(g.tags) +
+    '<div class="sec">자료 (★ 많은 순)</div><div class="list">' + list.slice(0, 60).map(itemHtml).join('') + '</div>' + (list.length > 60 ? '<p class="empty">… 분야 버튼을 누르면 전체 목록</p>' : '');
+  document.getElementById('back').addEventListener('click', () => { setHL([]); showOverview(); });
+  bindItems(); bindWorks(); panel.scrollTop = 0;
+}
+function showField(f){
+  const list = (FIELDS[f] || []).slice().sort(byImp); selected = null; setHL(list, null);
+  const ci = CL.findIndex(c => c.name === f); if (ci >= 0) flyTo(1000 + ci); else flyTo(-3);
+  const gi = groupOfTag(f);
+  panel.innerHTML = '<button class="back" id="back">← ' + esc(gi >= 0 ? GROUPS[gi].name : '전체') + '</button><h2>' + esc(f) + '</h2><p class="path">이 분야 태그가 붙은 자료 ' + list.length + '개 (다른 성단에 있어도 함께 밝혀짐)</p>' +
+    flowHtml([f]) +
+    '<div class="sec">자료</div><div class="list">' + list.map(itemHtml).join('') + '</div>';
+  document.getElementById('back').addEventListener('click', () => { setHL([]); gi >= 0 ? showGroup(gi) : showOverview(); });
+  bindItems(); panel.scrollTop = 0;
+}
+function showCluster(ci){
+  const c = CL[ci]; selected = null; setHL([]); markChip(500 + c.si);
+  const groups = {}; c.items.forEach(it => { (groups[it.folder] = groups[it.folder] || []).push(it); });
+  panel.innerHTML = '<button class="back" id="back">← ' + esc(c.src) + '</button><h2>' + esc(c.name) + '</h2><p class="path">' + c.items.length + '개 자료</p>' +
+    Object.keys(groups).sort().map(g => '<div class="sec">' + esc(g || '(최상위)') + '</div><div class="list">' + groups[g].sort((a,b)=>b.imp - a.imp || a.name.localeCompare(b.name)).map(itemHtml).join('') + '</div>').join('');
+  document.getElementById('back').addEventListener('click', () => { flyTo(-3); showSource(c.si); });
+  bindItems(); panel.scrollTop = 0;
+}
+function openItem(it){
+  if (!it) return; selected = it;
+  if (focus !== 1000 + it.ci) flyTo(1000 + it.ci);
+  markChip(500 + it.si);
+  const inc = incoming[keyOf(it)] || [], rel = relatedOf(it, 8), m = it.meta || {};
+  setHL(rel, it);
+  panel.innerHTML = '<button class="back" id="back">← ' + esc(CL[it.ci].name) + '</button>' +
+    '<h2>' + stars(it.imp) + esc(it.title) + '</h2>' +
+    (m.a || m.y || m.d ? '<p class="path">' + esc([m.a, m.y, m.d].filter(Boolean).join(' · ')) + '</p>' : '') +
+    '<div class="path">' + esc(it.full) + '</div>' +
+    '<div class="meta"><span class="tag">' + esc(it.ext.slice(1).toUpperCase()) + '</span><span class="tag">' + fmtSize(it.size) + '</span><span class="tag">수정 ' + esc(it.mtime) + '</span></div>' +
+    (it.fields.length ? '<div class="facets">' + it.fields.map(f => '<button class="facet" data-field="' + esc(f) + '">' + esc(f) + '<span class="n">' + FIELDS[f].length + '</span></button>').join('') + '</div>' : '') +
+    (it.works.length ? '<div class="facets">' + it.works.map(w => '<button class="facet" data-work="' + esc(w) + '" style="border-color:var(--orange)">업무 · ' + esc(w) + '<span class="n">' + WORKS[w].length + '</span></button>').join('') + '</div>' : '') +
+    (it.kws.length ? '<p class="qhint">키워드: ' + esc(it.kws.join(' · ')) + '</p>' : '') +
+    '<div class="list">' +
+    (it.url ? '<a class="item" href="' + esc(it.url) + '" target="_blank" rel="noopener">웹 주소 열기<small>' + esc(it.url) + '</small></a>' : '<button class="item" data-od="1">OneDrive에서 열기<small>폰의 OneDrive 앱 또는 웹에서 열림</small></button>') +
+    '<button class="item" id="cp">경로 복사<small>링크가 안 열리면 탐색기 주소창에 붙여넣기</small></button>' +
+    '</div>' +
+    '<div class="sec">TM·사례에서 이 자료를 연결하려면</div><p class="empty">문헌 칸에 <code>[[' + esc(it.name) + ']]</code> 를 적으면, 이 화면에서 서로 이어짐.</p>' +
+    (it.text ? '<div class="sec">내용 (개발 PC에서 동기화된 문서)</div><div class="md">' + md(it.text) + '</div>' : '') +
+    (rel.length ? '<div class="sec">관련 자료 (같은 키워드·업무·분야, 은하에서 선으로 이어짐)</div><div class="list">' + rel.map(itemHtml).join('') + '</div>' : '') +
+    (inc.length ? '<div class="sec">이 자료를 가리키는 곳</div><div class="list">' + inc.map(itemHtml).join('') + '</div>' : '<div class="sec">이 자료를 가리키는 곳</div><p class="empty">아직 없음</p>');
+  document.getElementById('back').addEventListener('click', () => { setHL([]); showCluster(it.ci); });
+  bindWorks();
+  const od = panel.querySelector('[data-od]'); if (od) od.addEventListener('click', () => window.cosmosOpen(it.full, od));
+  document.getElementById('cp').addEventListener('click', e => { const b = e.currentTarget; const done = () => b.firstChild.textContent = '복사됨'; try { navigator.clipboard.writeText(it.full).then(done, () => { prompt('경로', it.full); }); } catch (x) { prompt('경로', it.full); } });
+  bindItems(); panel.scrollTop = 0;
+}
+const impList = ITEMS.filter(it => it.imp).sort((a, b) => b.imp - a.imp || a.name.localeCompare(b.name));
+let impShown = 15;
+function showOverview(){
+  selected = null; setHL([]); markChip(-1);
+  const content = FILES.filter(f => f.kind === 'file');
+  const recent = content.slice().sort((a,b) => b.mtime.localeCompare(a.mtime)).slice(0, 8);
+  const blanks = content.reduce((s,f) => s + f.blanks, 0);
+  panel.innerHTML = '<h2>전체</h2><p class="path">' + esc(DATA.purpose) + '</p>' +
+    '<div class="sec">현재 상태</div><div class="stats">' +
+    '<div class="stat"><div class="v">' + content.length + '</div><div class="l">파일</div></div>' +
+    '<div class="stat"><div class="v">' + ITEMS.filter(i => i.ext === '.pdf').length + '</div><div class="l">연결된 PDF</div></div>' +
+    '<div class="stat"><div class="v">' + blanks + '</div><div class="l">비어 있는 칸</div></div></div>' +
+    (impList.length ? '<div class="sec">중요 표시 자료 ' + impList.length + '개 (★ 많은 순)</div><div class="list">' + impList.slice(0, impShown).map(itemHtml).join('') + '</div>' +
+      (impList.length > impShown ? '<button class="more" id="impmore">더 보기 (' + (impList.length - impShown) + '개 남음)</button>' : '') : '') +
+    workListHtml() +
+    (Object.keys(FIELDS).length ? '<div class="sec">큰 분야 (나선팔)</div><div class="list">' + GROUPS.map((g, gi) => { const n = ITEMS.filter(it => it.fields.some(t => g.tags.includes(t))).length, p = FILES.filter(f => f.layer === 'principles' && f.fields.some(t => g.tags.includes(t))).length; return '<button class="item" data-group="' + gi + '">' + esc((gi + 1) + '. ' + g.name) + '<small>자료 ' + n + ' · 원리 TM ' + p + ' · ' + esc(g.tags.join(', ')) + '</small></button>'; }).join('') + '</div>' : '') +
+    '<div class="sec">최근 수정</div><div class="list">' + recent.map(itemHtml).join('') + '</div>' +
+    (centerFile ? '<div class="sec">대문</div><div class="list">' + itemHtml(centerFile) + '</div>' : '');
+  const im = document.getElementById('impmore'); if (im) im.addEventListener('click', () => { impShown += 15; showOverview(); });
+  bindItems(); bindWorks();
+}
+function showSystem(i){
+  const s = SYS[i]; selected = null; markChip(i);
+  panel.innerHTML = '<h2>' + esc(s.name) + '</h2><p class="path">' + s.files.length + '개 파일</p>' +
+    (s.files.length ? '<div class="list">' + s.files.map(itemHtml).join('') + '</div>' : '<p class="empty">아직 비어 있음. 이 층에 파일을 넣고 Cosmos_open.bat 를 다시 실행하면 행성으로 나타남.</p>') +
+    (s.meta.length ? '<div class="sec">안내·틀</div><div class="list">' + s.meta.map(itemHtml).join('') + '</div>' : '');
+  bindItems();
+}
+function openFile(f){
+  if (!f) return; selected = f;
+  const si = SYS.findIndex(s => s.key === f.layer);
+  if (si >= 0 && focus !== si) { flyTo(si); }
+  markChip(si);
+  const out = f.links.map(l => resolve(l)).filter(Boolean), inc = incoming[keyOf(f)] || [];
+  panel.innerHTML = '<button class="back" id="back">← ' + esc(si >= 0 ? SYS[si].name : '전체') + '</button>' +
+    '<h2>' + esc(f.title) + '</h2><div class="path">' + esc(f.path) + '</div>' +
+    '<div class="meta"><span class="tag">' + esc(layerName(f.layer)) + '</span><span class="tag">수정 ' + esc(f.mtime) + '</span>' +
+    (f.blanks ? '<span class="tag warn">비어 있는 칸 ' + f.blanks + '</span>' : '') + '</div>' +
+    '<div class="md">' + md(f.text) + '</div>' +
+    (out.length ? '<div class="sec">이 파일이 가리키는 곳</div><div class="list">' + out.map(itemHtml).join('') + '</div>' : '') +
+    (inc.length ? '<div class="sec">이 파일을 가리키는 곳</div><div class="list">' + inc.map(itemHtml).join('') + '</div>' : '');
+  document.getElementById('back').addEventListener('click', () => si >= 0 ? showSystem(si) : showOverview());
+  panel.querySelectorAll('.md a[data-link]').forEach(a => a.addEventListener('click', () => { const t = resolve(a.dataset.link); if (t) (t.isItem ? openItem(t) : openFile(t)); else a.title = '아직 없는 파일'; }));
+  bindItems(); panel.scrollTop = 0;
+}
+
+/* ---------- search ---------- */
+/* ===== 검색 =====
+   - 같은 뜻 낱말(한영·약어): _app/synonyms.txt 를 색인 만들 때 읽어 옴 (없으면 아래 기본 목록)
+   - 붙여 쓴 한글은 사전 낱말로 나눔 (SAR검보정 → sar + 검보정, 태양전파관측 → 태양 + 전파 + 관측)
+   - 영문은 어미가 달라도 찾음 (calibration ↔ calibrated), 철자 한두 자 틀려도 비슷한 낱말로 찾음
+   - 모든 낱말이 맞는 자료를 먼저, 그다음 일부만 맞는 자료를 보여 줌 */
+const SYN_BASE = [
+  ['태양','solar','sun'], ['전파','radio'], ['안테나','antenna'], ['레이다','레이더','radar'],
+  ['교정','보정','검보정','검교정','calibration','cal/val','calval'], ['위성','satellite'],
+  ['합성개구레이다','합성개구레이더','sar','synthetic aperture radar'], ['관측','observation']
+];
+const SYN = (DATA.synonyms && DATA.synonyms.length) ? DATA.synonyms : SYN_BASE;
+const norm = s => String(s || '').toLowerCase()
+  .replace(/([a-z0-9])([가-힣])/g, '$1 $2').replace(/([가-힣])([a-z0-9])/g, '$1 $2')
+  .replace(/[_\-.+()\[\],:;'"!?~·]+/g, ' ').replace(/\s+/g, ' ').trim();
+const SYN_OF = {};
+SYN.forEach(g => {
+  const gg = g.map(norm).filter(Boolean);
+  const keys = gg.concat(gg.filter(w => /[가-힣]/.test(w) && w.includes(' ')).map(w => w.replace(/ /g, '')));
+  keys.forEach(w => { SYN_OF[w] = Array.from(new Set((SYN_OF[w] || []).concat(gg))); });
+});
+const KO_DICT = Object.keys(SYN_OF).filter(w => /^[가-힣]{2,}$/.test(w)).sort((a, b) => b.length - a.length);
+const isWordCh = c => !!c && /[a-z0-9가-힣]/.test(c);
+const isLatin = t => /^[a-z0-9 \/]+$/.test(t);
+
+/* 낱말 찾기. mode: 'exact' 그대로 / 'prefix' 낱말 첫머리부터 (영문 어간) */
+function findTerm(hay, t, mode){
+  const strict = /^[a-z0-9]{1,3}$/.test(t) || /^\d+$/.test(t);
+  const head = /^[가-힣]$/.test(t) || mode === 'prefix';
+  let from = 0, best = null;
+  while (true) {
+    const i = hay.indexOf(t, from); if (i < 0) break;
+    const ws = !isWordCh(hay[i - 1]), en = !isWordCh(hay[i + t.length]);
+    if ((!strict || (ws && en)) && (!head || ws)) {
+      const r = [i, ws, ws && en];
+      if (!best || (r[1] && !best[1]) || (r[2] && !best[2])) best = r;
+      if (best[2]) break;
+    }
+    from = i + 1;
+  }
+  return best;
+}
+function countTerm(hay, t){ let n = 0, i = 0; while (n < 5 && (i = hay.indexOf(t, i)) >= 0) { n++; i += t.length; } return n; }
+
+/* 영문 어간: calibration → calibr, antennas → antenna, measured → measur */
+function stem(w){
+  if (!/^[a-z]{5,}$/.test(w)) return '';
+  const s = w.replace(/(ational|ations|ation|ements|ement|ments|ment|ings|ing|ities|ity|ies|ied|ers|er|ed|es|s)$/, '');
+  return s.length >= 4 && s !== w ? s : '';
+}
+/* 철자 비교 (편집 거리) */
+function edit(a, b, max){
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({length:b.length + 1}, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i]; let low = i;
+    for (let j = 1; j <= b.length; j++) { cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); low = Math.min(low, cur[j]); }
+    if (low > max) return max + 1; prev = cur;
+  }
+  return prev[b.length];
+}
+
+/* 문서별 검색 칸 (한 번만 만듦) */
+const DOCS = FILES.filter(f => f.kind === 'file' || f.path === 'AGENTS.md').map(f => ({ref:f, kind:'note', title:f.title, tn:norm(f.title), pn:norm(f.path), bn:norm(f.text), body:f.text, topic:layerName(f.layer)}))
+  .concat(ITEMS.map(it => ({ref:it, kind:it.docs ? 'dev' : it.ext === '.pdf' ? 'pdf' : (it.ext === '.url' ? 'url' : 'doc'), title:it.name,
+    tn:norm(it.name + ' ' + (it.title !== it.name ? it.title : '') + ' ' + it.kws.join(' ') + ' ' + ((it.meta && it.meta.a) || '')),
+    pn:norm(it.folder + ' ' + it.fields.join(' ') + ' ' + it.works.join(' ')), bn:norm(it.text || ''), body:it.text || '', topic:it.docs ? '개발 · ' + it.topic : (it.fields[0] || it.topic), year:(it.name.match(/(?:^|_)((?:19|20)\d\d)_/) || [])[1] || ''})));
+DOCS.forEach(d => { d.tk = d.tn.replace(/ /g, ''); d.pk = d.pn.replace(/ /g, ''); });
+const VOCAB = new Set(); DOCS.forEach(d => (d.tn + ' ' + d.pn).split(' ').forEach(w => { if (/^[a-z]{5,}$/.test(w)) VOCAB.add(w); }));
+
+/* 붙여 쓴 한글을 사전 낱말로 나눔. 사전에 없는 부분은 그대로 둠 */
+function splitKo(t){
+  if (!/^[가-힣]{3,}$/.test(t) || SYN_OF[t]) return [t];
+  const out = []; let i = 0, rest = '';
+  while (i < t.length) {
+    const w = KO_DICT.find(k => t.startsWith(k, i));
+    if (w) { if (rest) { out.push(rest); rest = ''; } out.push(w); i += w.length; } else { rest += t[i]; i++; }
+  }
+  if (rest) out.push(rest);
+  return out.length > 1 && out.every(p => p.length >= 2) ? out : [t];
+}
+/* 낱말 하나 → 찾을 형태 목록 [글자, 가중치, 방식, 설명] */
+function variants(t){
+  const v = [[t, 1, 'exact', '']];
+  (SYN_OF[t] || []).forEach(s => { if (s !== t) v.push([s, .85, 'exact', 'syn']); });
+  v.slice().forEach(([w, wt]) => { if (isLatin(w)) w.split(' ').length === 1 && stem(w) && v.push([stem(w), wt * .8, 'prefix', 'stem']); });
+  return v;
+}
+function parseQuery(raw){
+  const terms = [], minus = [], fixed = [];
+  const words = [];
+  raw.replace(/"([^"]+)"|(\S+)/g, (m, ph, w) => {
+    if (ph) { const t = norm(ph); if (t) terms.push({t, vars:[[t, 1, 'exact', '']]}); return ''; }
+    if (w[0] === '-' && w.length > 1) { const t = norm(w.slice(1)); if (t) minus.push(t); return ''; }
+    norm(w).split(' ').filter(Boolean).forEach(x => words.push(x));
+    return '';
+  });
+  /* 이어진 낱말이 사전에 한 덩어리로 있으면 묶음 (레이다 단면적, phased array) */
+  for (let i = 0; i < words.length;) {
+    let took = 0;
+    for (let j = Math.min(words.length, i + 4); j >= i + 2; j--) {
+      const a = words.slice(i, j).join(' '), b = words.slice(i, j).join('');
+      const k = SYN_OF[a] ? a : (SYN_OF[b] ? b : '');
+      if (k) { terms.push({t:k, vars:variants(k)}); took = j - i; break; }
+    }
+    if (took) { i += took; continue; }
+    splitKo(words[i]).forEach(p => terms.push({t:p, vars:variants(p)}));
+    i++;
+  }
+  /* 영문 낱말이 색인 어디에도 없으면 철자가 비슷한 낱말을 함께 찾음 */
+  terms.forEach(term => {
+    if (!/^[a-z]{5,}$/.test(term.t) || VOCAB.has(term.t) || SYN_OF[term.t]) return;
+    const max = term.t.length >= 8 ? 2 : 1; let best = null, bd = max + 1;
+    VOCAB.forEach(w => { const d = edit(term.t, w, max); if (d < bd) { bd = d; best = w; } });
+    if (best) { term.vars.push([best, .6, 'exact', 'typo']); (SYN_OF[best] || []).forEach(s => s !== best && term.vars.push([s, .5, 'exact', 'typo'])); fixed.push(term.t + '→' + best); }
+  });
+  return {terms, minus, fixed};
+}
+function termScore(d, term){
+  let best = 0;
+  for (const [v, w, mode] of term.vars) {
+    let s = 0;
+    if (/^(19|20)\d\d$/.test(v) && d.year === v) s = 9;
+    const ko = /[가-힣]/.test(v), vk = v.replace(/ /g, '');
+    const a = findTerm(d.tn, v, mode) || (ko && d.tk.includes(vk) ? [0, false, false] : null);
+    if (a) s = Math.max(s, a[2] ? 12 : a[1] ? 9 : 5);
+    const b = findTerm(d.pn, v, mode) || (ko && d.pk.includes(vk) ? [0, false, false] : null);
+    if (b) s = Math.max(s, b[1] ? 4 : 2);
+    if (d.bn && findTerm(d.bn, v, mode)) s = Math.max(s, 1.5 + countTerm(d.bn, v));
+    best = Math.max(best, s * w);
+  }
+  return best;
+}
+function scoreDoc(d, Q){
+  for (const m of Q.minus) if (d.tn.includes(m) || d.pn.includes(m) || d.bn.includes(m)) return null;
+  let total = 0, hit = 0;
+  for (const term of Q.terms) { const s = termScore(d, term); if (s) { total += s; hit++; } }
+  if (!hit) return null;
+  if (Q.terms.length > 1 && d.tn.includes(Q.terms.map(x => x.t).join(' '))) total += 10;
+  if (d.kind === 'note') total += 2;
+  if (d.ref.imp) total += 3 * d.ref.imp;   /* 중요 표시가 많을수록 위로 */
+  return {s:total, hit};
+}
+function hl(s, vars){
+  const low = s.toLowerCase(), marks = new Array(s.length).fill(false);
+  vars.forEach(v => { if (!v || v.length < 2) return; let i = 0; while ((i = low.indexOf(v, i)) >= 0) { for (let k = 0; k < v.length; k++) marks[i + k] = true; i += v.length; } });
+  let out = '', on = false;
+  for (let i = 0; i < s.length; i++) { if (marks[i] !== on) { out += marks[i] ? '<mark>' : '</mark>'; on = marks[i]; } out += esc(s[i]); }
+  return out + (on ? '</mark>' : '');
+}
+function snippet(body, vars){
+  const low = body.toLowerCase(); let at = -1, len = 0;
+  for (const v of vars) { if (v.length < 2) continue; const i = low.indexOf(v); if (i >= 0 && (at < 0 || i < at)) { at = i; len = v.length; } }
+  if (at < 0) return '';
+  const a = Math.max(0, at - 40), b = Math.min(body.length, at + len + 60);
+  return (a ? '… ' : '') + body.slice(a, b).replace(/\s+/g, ' ').replace(/^[#>\-|*\s]+/, '') + (b < body.length ? ' …' : '');
+}
+const KIND = {all:'전체', note:'내 기록', dev:'개발 문서', pdf:'PDF', url:'웹링크', doc:'기타 문서'};
+const PAGE = 20;
+let S = {Q:null, raw:'', res:[], kind:'all', topic:'', shown:PAGE};
+function runSearch(){
+  const raw = q.value.trim();
+  if (!raw) { showOverview(); return; }
+  const Q = parseQuery(raw);
+  if (!Q.terms.length) { panel.innerHTML = '<h2>검색</h2><p class="empty">찾을 낱말을 넣어 주세요. "-낱말"은 빼고 찾을 때만 씀.</p>'; return; }
+  if (raw !== S.raw) S = {Q, raw, res:[], kind:'all', topic:'', shown:PAGE};
+  const n = Q.terms.length, need = n <= 2 ? n : n - 1;
+  const all = DOCS.map(d => ({d, r:scoreDoc(d, Q)})).filter(x => x.r);
+  const full = all.filter(x => x.r.hit === n), part = all.filter(x => x.r.hit < n && x.r.hit >= Math.max(1, need === n ? n - 1 : need));
+  const ord = (a, b) => b.r.s - a.r.s || a.d.title.localeCompare(b.d.title);
+  full.sort(ord); part.sort(ord); part.forEach(x => x.part = true);
+  /* 모든 낱말이 맞는 자료가 적으면 일부만 맞는 자료를 뒤에 붙임 */
+  S.res = full.length >= 8 || n === 1 ? full : full.concat(part.slice(0, 40));
+  S.full = full.length;
+  renderSearch();
+}
+function renderSearch(){
+  const {Q, res} = S;
+  const vars = [].concat(...Q.terms.map(t => t.vars.map(v => v[0])));
+  const byKind = {all:res.length}; res.forEach(x => byKind[x.d.kind] = (byKind[x.d.kind] || 0) + 1);
+  const nImp = res.filter(x => x.d.ref.imp).length;
+  const inKind = res.filter(x => (S.kind === 'all' || x.d.kind === S.kind) && (!S.imp || x.d.ref.imp));
+  const tc = {}; inKind.forEach(x => tc[x.d.topic] = (tc[x.d.topic] || 0) + 1);
+  const topics = Object.keys(tc).sort((a, b) => tc[b] - tc[a]).slice(0, 8);
+  const list = inKind.filter(x => !S.topic || x.d.topic === S.topic);
+  const how = [];
+  if (Q.terms.length > 1) how.push('나눠 찾은 낱말: ' + Q.terms.map(t => t.t).join(' + '));
+  Q.terms.forEach(t => { const syn = t.vars.filter(v => v[3] === 'syn').map(v => v[0]); if (syn.length) how.push(t.t + ' = ' + syn.join(', ')); });
+  if (Q.fixed.length) how.push('철자가 비슷한 낱말로 찾음: ' + Q.fixed.join(', '));
+  selected = null;
+  let firstPart = list.findIndex(x => x.part);
+  const shown = list.slice(0, S.shown);
+  panel.innerHTML = '<h2>검색: ' + esc(S.raw) + '</h2>' +
+    '<p class="path">모든 낱말이 맞는 자료 ' + S.full + '개' + (res.length > S.full ? ' · 일부만 맞는 자료 ' + (res.length - S.full) + '개' : '') + ' · 관련 높은 순</p>' +
+    (how.length ? '<p class="qhint">' + how.map(esc).join('<br>') + '</p>' : '') +
+    (S.full > 40 && Q.terms.length < 2 ? '<p class="qhint">결과가 많음. 낱말을 하나 더 붙이면 좁혀짐</p>' : '') +
+    '<div class="facets">' + Object.keys(KIND).filter(k => byKind[k]).map(k => '<button class="facet" data-kind="' + k + '" aria-pressed="' + (S.kind === k) + '">' + KIND[k] + '<span class="n">' + byKind[k] + '</span></button>').join('') + (nImp ? '<button class="facet" id="fimp" aria-pressed="' + !!S.imp + '">★ 중요 표시만<span class="n">' + nImp + '</span></button>' : '') + '</div>' +
+    (topics.length > 1 ? '<div class="facets">' + topics.map(t => '<button class="facet" data-topic="' + esc(t) + '" aria-pressed="' + (S.topic === t) + '">' + esc(t) + '<span class="n">' + tc[t] + '</span></button>').join('') + '</div>' : '') +
+    (list.length ? '<div class="list">' + shown.map((x, k) => (k === firstPart ? '<div class="sec">일부 낱말만 맞는 자료</div>' : '') + resultHtml(x.d, vars)).join('') + '</div>' +
+      (list.length > S.shown ? '<button class="more" id="more">더 보기 (' + (list.length - S.shown) + '개 남음)</button>' : '')
+      : '<p class="empty">맞는 자료가 없음. 다른 낱말이나 영문으로 찾아 보세요. 자주 쓰는 말은 _app/synonyms.txt 에 한 줄 추가하면 다음부터 함께 찾음.</p>');
+  panel.querySelectorAll('[data-kind]').forEach(b => b.addEventListener('click', () => { S.kind = b.dataset.kind; S.topic = ''; S.shown = PAGE; renderSearch(); }));
+  panel.querySelectorAll('[data-topic]').forEach(b => b.addEventListener('click', () => { S.topic = S.topic === b.dataset.topic ? '' : b.dataset.topic; S.shown = PAGE; renderSearch(); }));
+  const fi = document.getElementById('fimp'); if (fi) fi.addEventListener('click', () => { S.imp = !S.imp; S.topic = ''; S.shown = PAGE; renderSearch(); });
+  const mb = document.getElementById('more'); if (mb) mb.addEventListener('click', () => { S.shown += PAGE; renderSearch(); });
+  bindItems();
+}
+function resultHtml(d, vars){
+  const f = d.ref;
+  if (f.isItem) return '<button class="item" data-full="' + esc(f.full) + '">' + stars(f.imp) + hl(f.name, vars) + '<small>' + esc(KIND[d.kind] + ' · ' + (f.folder || '(최상위)')) + '</small></button>';
+  const sn = snippet(d.body, vars);
+  return '<button class="item" data-path="' + esc(f.path) + '">' + hl(f.title, vars) + '<small>' + esc('내 기록 · ' + layerName(f.layer) + ' · ' + f.mtime) + '</small>' + (sn ? '<span class="snip">' + hl(sn, vars) + '</span>' : '') + '</button>';
+}
+const q = document.getElementById('q');
+let qt = null;
+q.addEventListener('input', () => { clearTimeout(qt); qt = setTimeout(runSearch, 180); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.activeElement !== q) { flyTo(-1); showOverview(); } });
+
+/* ---------- galaxy ---------- */
+const cv = document.getElementById('cv'), g = cv.getContext('2d');
+/* 발광점: 색별로 둥근 빛 번짐 그림을 한 번 만들어 두고 크기만 바꿔 찍음 */
+const SPR = {};
+function sprite(col, hot){
+  const key = col + (hot ? 'h' : ''); if (SPR[key]) return SPR[key];
+  const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+  const gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, hot ? '#FFFFFF' : '#FBFAF4'); gr.addColorStop(hot ? .10 : .07, hot ? '#FFF6DE' : col);
+  gr.addColorStop(hot ? .26 : .18, col); gr.addColorStop(hot ? .55 : .42, col + (hot ? '66' : '33')); gr.addColorStop(1, col + '00');
+  x.fillStyle = gr; x.fillRect(0, 0, 64, 64); return (SPR[key] = c);
+}
+/* r = 빛나는 중심 반지름(px). 실제로는 r의 약 4배 범위까지 은은하게 번짐 */
+function glow(px, py, r, col, a, hot){ if (a <= 0) return; g.globalAlpha = Math.min(1, a); const R = r * 4; g.drawImage(sprite(col, hot), px - R, py - R, R * 2, R * 2); }
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const cam = {tx:0, ty:0, tz:0, d:4400, yaw:0.6, pitch:-0.55};
+let fl = null, focus = -1, sim = 0, last = 0;
+const V = 15, SG = 0.15, AL = 0.52;
+let seed = 11; const R = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296, G = () => (R() + R() + R() - 1.5) / 0.5;
+const P = [];
+for (let i = 0; i < 500; i++) { const u = R()*2-1, th = R()*6.283, s = Math.sqrt(1-u*u); P.push({k:0, x:9000*s*Math.cos(th), y:9000*u, z:9000*s*Math.sin(th), c:'#BDBDB8', s:.5+R()*1.1, ph:R()*6.28}); }
+for (let i = 0; i < 1000; i++) { const r = Math.abs(G())*230+10; P.push({k:1, r, a0:R()*6.283, y:G()*90*Math.exp(-r/300), c:R()<.6?'#E0C9A8':'#D8D2C4', s:1.1, al:.55}); }
+for (let i = 0; i < 4000; i++) { const j = i%4, r = 260+1600*Math.pow(R(),.85)+G()*35; P.push({k:1, r, a0:j*Math.PI/2+Math.log(r/260)*2.2+G()*(j%2?.22:.14), y:G()*22*(1.2-r/2200), c:R()<.15?'#B9B78A':(R()<.5?'#CFCFCA':'#A9A9A4'), s:j%2?.9:1.1, al:j%2?.5:.75}); }
+for (let i = 0; i < 1200; i++) { const r = 220+1650*Math.sqrt(R()); P.push({k:1, r, a0:R()*6.283, y:G()*25, c:'#8A8A84', s:.8, al:.35}); }
+
+const starPos = (i, s) => { const S = SYS[i], a = S.ph + V / S.r * s; return [S.r*Math.cos(a), 0, S.r*Math.sin(a), a]; };
+const clPos = (c, rot) => { const a = c.ph + rot; return [c.R * Math.cos(a), c.y, c.R * Math.sin(a)]; };
+const targetOf = i => {
+  if (i === -3) return {x:0,y:0,z:0,d:6200,p:-.75};
+  if (i < 0) return {x:0,y:0,z:0,d:4400,p:-.55};
+  if (i >= 1000) { const c = CL[i - 1000], q = clPos(c, .012 * sim); return {x:q[0], y:q[1], z:q[2], d:Math.max(110, c.rc * 6), p:-.35}; }
+  const q = starPos(i, sim); return {x:q[0], y:q[1], z:q[2], d:170, p:-.3};
+};
+function flyTo(i){ fl = {t0:performance.now(), dur:RM?1:2400, fr:{x:cam.tx,y:cam.ty,z:cam.tz,d:cam.d,p:cam.pitch}, to:i}; focus = -2; }
+const zoomBy = k => { cam.d = Math.max(60, Math.min(6500, cam.d * k)); };
+document.getElementById('zin').onclick = () => zoomBy(.7);
+document.getElementById('zout').onclick = () => zoomBy(1.45);
+cv.addEventListener('wheel', e => { e.preventDefault(); zoomBy(Math.exp(e.deltaY * .0012)); }, {passive:false});
+const ptrs = {}; let moved = 0;
+cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); ptrs[e.pointerId] = {x:e.clientX, y:e.clientY}; moved = 0; });
+cv.addEventListener('pointermove', e => {
+  const p = ptrs[e.pointerId]; if (!p) return; const ids = Object.keys(ptrs);
+  if (ids.length === 2) { const o = ptrs[ids[0] == e.pointerId ? ids[1] : ids[0]]; const d0 = Math.hypot(p.x-o.x, p.y-o.y), d1 = Math.hypot(e.clientX-o.x, e.clientY-o.y); if (d0 && d1) zoomBy(d0/d1); }
+  else { cam.yaw += (e.clientX-p.x)*.006; cam.pitch = Math.max(-1.45, Math.min(.6, cam.pitch + (e.clientY-p.y)*.004)); }
+  moved += Math.abs(e.clientX-p.x) + Math.abs(e.clientY-p.y); p.x = e.clientX; p.y = e.clientY;
+});
+let hits = [];
+const up = e => {
+  const had = ptrs[e.pointerId]; delete ptrs[e.pointerId];
+  if (!had || moved > 6) return;
+  const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  let best = null, bd = 1e9;
+  for (const h of hits) { const d = Math.hypot(h.x-mx, h.y-my); if (d < h.r && d < bd) { bd = d; best = h; } }
+  if (!best) return;
+  if (best.it) openItem(best.it);
+  else if (best.ci !== undefined) { if (focus !== 1000 + best.ci) flyTo(1000 + best.ci); showCluster(best.ci); }
+  else if (best.file) openFile(best.file);
+  else if (best.sys >= 0) { if (focus !== best.sys) flyTo(best.sys); showSystem(best.sys); }
+  else { flyTo(-1); if (centerFile) openFile(centerFile); }
+};
+cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+
+let SPIN = false; /* 자동 회전: 기본 꺼짐, 회전 버튼으로 켬 */
+const spinBtn = document.getElementById('zspin'); if (spinBtn) spinBtn.onclick = () => { SPIN = !SPIN; spinBtn.setAttribute('aria-pressed', String(SPIN)); };
+function draw(t){
+  const W = cv.clientWidth, H = cv.clientHeight, dpr = Math.min(2, devicePixelRatio || 1);
+  if (!W || !H) return;
+  if (cv.width !== Math.round(W*dpr) || cv.height !== Math.round(H*dpr)) { cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr); }
+  g.setTransform(dpr,0,0,dpr,0,0);
+  const dt = last ? Math.min(.05, (t-last)/1000) : 0; last = t; if (!RM && SPIN) sim += dt;
+  const cl = (v,a,b) => Math.max(a, Math.min(b, v)), lerp = (a,b,e) => a + (b-a)*e;
+  if (fl) {
+    const u = Math.min(1, (t-fl.t0)/fl.dur), e = u < .5 ? 4*u*u*u : 1 - Math.pow(-2*u+2, 3)/2, to = targetOf(fl.to);
+    const span = Math.hypot(to.x-fl.fr.x, to.z-fl.fr.z), bump = Math.sin(Math.PI*u) * Math.min(3.2, span/260);
+    cam.tx = lerp(fl.fr.x, to.x, e); cam.ty = lerp(fl.fr.y, to.y, e); cam.tz = lerp(fl.fr.z, to.z, e);
+    cam.d = Math.exp(lerp(Math.log(fl.fr.d), Math.log(to.d), e) + bump); cam.pitch = lerp(fl.fr.p, to.p, e);
+    if (u >= 1) { focus = fl.to; fl = null; }
+  } else if (focus >= 0) { const to = targetOf(focus); cam.tx = to.x; cam.ty = to.y; cam.tz = to.z; }
+  if (!RM && SPIN && !Object.keys(ptrs).length) cam.yaw += .0009;
+  g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.fillStyle = '#0D0D0C'; g.fillRect(0,0,W,H);
+  const f = Math.min(W, H*1.4)*1.25, cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+  const proj = (x,y,z) => { x -= cam.tx; y -= cam.ty; z -= cam.tz; const x1 = x*cy + z*sy, z1 = -x*sy + z*cy, y1 = y*cp - z1*sp, z2 = y*sp + z1*cp + cam.d; return z2 < 8 ? null : [W/2 + f*x1/z2, H/2 + f*y1/z2, z2]; };
+  const hA = cl((cam.d-60)/1400, .35, 1), lA = cl((cam.d-500)/900, 0, 1);
+  g.globalCompositeOperation = 'lighter';
+  const rot = .012 * sim;
+  for (let i = 0; i < P.length; i++) {
+    const p = P[i]; let qq, A, s;
+    if (p.k === 0) { qq = proj(p.x+cam.tx, p.y+cam.ty, p.z+cam.tz); if (!qq) continue; A = .5 + .4*Math.sin(t/1100 + p.ph); s = p.s; }
+    else { const a = p.a0 + rot; qq = proj(p.r*Math.cos(a), p.y, p.r*Math.sin(a)); if (!qq) continue; A = p.al*hA*(qq[2] < 80 ? qq[2]/80 : 1); s = Math.min(2.6, p.s*Math.sqrt(f/qq[2])*1.2); }
+    if (qq[0] < -5 || qq[0] > W+5 || qq[1] < -5 || qq[1] > H+5) continue;
+    if (s < 1.6) { g.globalAlpha = A; g.fillStyle = p.c; g.beginPath(); g.arc(qq[0], qq[1], s/2, 0, 6.283); g.fill(); } else glow(qq[0], qq[1], s/2, p.c, A*.9);
+  }
+  const ca = Math.cos(AL), sa = Math.sin(AL), pulse = .65 + .35*Math.sin(t/380);
+  hits = []; const labs = [];
+  const q0 = proj(0,0,0);
+  if (q0) { hits.push({x:q0[0], y:q0[1], r:28, sys:-1}); if (lA > .05) labs.push({x:q0[0]+12, y:q0[1]+16, t:'나 · 대문', c:'#A4A49D', a:lA}); }
+  for (let i = 0; i < SYS.length; i++) {
+    const S = SYS[i], st = starPos(i, sim), q = proj(st[0], st[1], st[2]); if (!q) continue;
+    const cS = cl((700 - q[2]) / 450, 0, 1);
+    if (cS > .02) {
+      for (let j = 1; j < 60; j++) { const Sp = starPos(i, sim - j*.25), qq = proj(Sp[0], Sp[1], Sp[2]); if (!qq) continue; const ss = Math.min(3, 1.2*Math.sqrt(f/qq[2])); glow(qq[0], qq[1], ss/2, '#C98A5B', cS*.5*(1-j/60)); }
+      for (const pl of S.pl) {
+        const M = 80, isSel = selected && selected.path === pl.f.path, col = isSel ? '#C98A5B' : S.col;
+        for (let j = M; j >= 0; j--) {
+          const tau = sim - j*.11, Sp = starPos(i, tau), a = Sp[3], rx = Math.cos(a), rz = Math.sin(a), vx = -Math.sin(a), vz = Math.cos(a);
+          const th = pl.w*tau + pl.ph, cth = Math.cos(th), sth = Math.sin(th);
+          const qq = proj(Sp[0] + SG*pl.R*(cth*rx + sth*sa*vx), SG*pl.R*sth*ca, Sp[2] + SG*pl.R*(cth*rz + sth*sa*vz)); if (!qq) continue;
+          if (j === 0) {
+            const rr = Math.max(2.5, f*SG*pl.size/qq[2]);
+            g.globalAlpha = cS*(isSel ? .3*pulse : .12); g.fillStyle = col; g.beginPath(); g.arc(qq[0], qq[1], rr*2.6, 0, 6.283); g.fill();
+            g.globalAlpha = cS*(isSel ? 1 : .9); g.beginPath(); g.arc(qq[0], qq[1], rr, 0, 6.283); g.fill();
+            if (cS > .3) { hits.push({x:qq[0], y:qq[1], r:Math.max(rr+6, 12), file:pl.f}); labs.push({x:qq[0]+rr+6, y:qq[1], t:pl.f.title, c:isSel ? '#C98A5B' : (S.key === 'principles' ? '#C9C68A' : '#D8D8D2'), a:cS}); }
+          } else {
+            const ss = Math.min(2.4, 1.1*Math.sqrt(f/qq[2]));
+            glow(qq[0], qq[1], ss/2, col, cS*.55*(1-j/M));
+          }
+        }
+      }
+    }
+    const sr = Math.max(2.6, f*SG*9/q[2]), dim = S.files.length ? 1 : .45;
+    g.globalAlpha = .18*dim; g.fillStyle = '#C98A5B'; g.beginPath(); g.arc(q[0], q[1], sr*3.2, 0, 6.283); g.fill();
+    g.globalAlpha = .95*dim; g.beginPath(); g.arc(q[0], q[1], sr, 0, 6.283); g.fill();
+    hits.push({x:q[0], y:q[1], r:Math.max(sr+8, 18), sys:i});
+    const label = S.name + (S.files.length ? ' ' + S.files.length : ' (비어 있음)');
+    if (lA > .05) { g.globalAlpha = lA*.8*dim; g.strokeStyle = '#C98A5B'; g.lineWidth = 1; g.beginPath(); g.arc(q[0], q[1], 11, 0, 6.283); g.stroke(); labs.push({x:q[0]+16, y:q[1], t:label, c:'#C98A5B', a:lA*Math.max(dim,.7)}); }
+    else if (cS > .3) labs.push({x:q[0]+sr+8, y:q[1]-sr-8, t:label, c:'#C98A5B', a:cS});
+  }
+  g.globalCompositeOperation = 'lighter';
+  for (let ci = 0; ci < CL.length; ci++) {
+    const c = CL[ci], cp0 = clPos(c, rot), qc = proj(cp0[0], cp0[1], cp0[2]); if (!qc) continue;
+    const near = cl((900 - qc[2]) / 600, 0, 1), isF = focus === 1000 + ci;
+    for (const it of c.items) {
+      const qq = proj(cp0[0] + it.off[0], cp0[1] + it.off[1], cp0[2] + it.off[2]); it._q = null; if (!qq) continue;
+      if (qq[0] < -20 || qq[0] > W+20 || qq[1] < -20 || qq[1] > H+20) continue;
+      it._q = qq;
+      const isSel = selected && selected.isItem && selected.full === it.full, isH = HL.set.has(it);
+      /* 중요도가 높을수록 더 진하고 크게, 중심이 하얗게 타오르는 빛. 천천히 반짝임 */
+      const col = isSel || isH ? '#E0A070' : (it.imp >= 3 ? '#E2D58E' : it.imp === 2 ? '#D8CC8A' : it.imp ? '#CFC78C' : (it.ext === '.url' ? '#C98A5B' : (it.ext === '.pdf' ? '#D8D8D2' : '#9C9C96')));
+      const base = Math.max(.7, .7 * Math.sqrt(f / qq[2]) * (1 + near));
+      const s = Math.min(isSel ? 6 : 3.4 + it.imp * .9, base * (1 + .45 * it.imp) * (isH ? 1.5 : 1));
+      const tw = it.imp ? .85 + .15 * Math.sin(t / 520 + it.off[0]) : 1;
+      const A = (isSel || isH ? 1 : (it.imp ? .75 + .2 * it.imp : .5 + .35 * near)) * tw * (HL.set.size && !isH && !isSel ? .45 : 1);
+      if (it.imp >= 2 || isSel) glow(qq[0], qq[1], s * (1.6 + .25 * it.imp), col, A * .25, false);
+      glow(qq[0], qq[1], s, col, A, it.imp >= 2 || isSel || isH);
+      if (near > .5 || isH) { hits.push({x:qq[0], y:qq[1], r:Math.max(8, s * 2 + 4), it}); if (isSel || (isH && HL.set.size <= 12) || (near > .75 && isF && !HL.set.size && (it.imp || c.items.length <= 15))) labs.push({x:qq[0] + s * 2 + 4, y:qq[1], t:(it.title.length > 46 ? it.title.slice(0, 45) + '…' : it.title), c:isSel || isH ? '#E0A070' : '#BDBDB8', a:isH ? .95 : near * .9}); }
+    }
+    hits.push({x:qc[0], y:qc[1], r:Math.max(16, f * c.rc / qc[2]), ci});
+    const showL = near > .05 || (lA > .05 && ci < 10) || (focus === -3 && lA > .05);
+    if (showL && !(isF && near > .75)) labs.push({x:qc[0] + f * c.rc / qc[2] + 6, y:qc[1], t:c.name + ' ' + c.items.length, c:'#B9B78A', a:Math.max(near, lA * .85)});
+  }
+  /* 나선팔 이름: 각 큰 분야의 첫 성단 바깥쪽에 */
+  if (clMode === 'field' && lA > .05) GROUPS.forEach((gr, gi) => {
+    const c = CL.find(x => x.gi === gi); if (!c) return;
+    const p0 = clPos(c, rot), q = proj(p0[0] * .8, p0[1] - 230, p0[2] * .8); if (!q) return;
+    labs.push({x:q[0], y:q[1], t:(gi + 1) + '. ' + gr.name, c:'#E2D58E', a:lA, big:1});
+  });
+  /* 연결선: 업무 → 중심(나)에서 각 자료로, 자료 → 관련 자료로 */
+  if (HL.set.size) {
+    const from = HL.from === 'center' ? q0 : (HL.from && HL.from._q);
+    if (from) {
+      g.lineWidth = 1;
+      HL.set.forEach(o => { if (!o._q) return; const gr = g.createLinearGradient(from[0], from[1], o._q[0], o._q[1]); gr.addColorStop(0, 'rgba(201,138,91,.55)'); gr.addColorStop(1, 'rgba(201,138,91,.12)'); g.strokeStyle = gr; g.globalAlpha = 1; g.beginPath(); g.moveTo(from[0], from[1]); g.lineTo(o._q[0], o._q[1]); g.stroke(); });
+    }
+  }
+  g.globalCompositeOperation = 'source-over';
+  g.font = "12px 'Noto Sans KR','Malgun Gothic',sans-serif"; g.textBaseline = 'middle';
+  for (const L of labs) { if (fl) continue; g.font = L.big ? "500 15px 'Noto Sans KR','Malgun Gothic',sans-serif" : "12px 'Noto Sans KR','Malgun Gothic',sans-serif"; const w = g.measureText(L.t).width; g.globalAlpha = L.a; g.fillStyle = L.c; if (L.x + w > W - 6) { g.textAlign = 'right'; g.fillText(L.t, W - 6, L.y); } else { g.textAlign = 'left'; g.fillText(L.t, L.x, L.y); } }
+  g.globalAlpha = 1;
+}
+function loop(t){ try { draw(t); } catch (e) { console.error(e); } requestAnimationFrame(loop); }
+showOverview(); requestAnimationFrame(loop);
+})();
+</script>
+<script src="loader.js"></script>
+</body>
+</html>

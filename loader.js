@@ -5,7 +5,7 @@
     clientId: "40855125-e565-46a2-b87c-0b74733a1276",
     redirectUri: "https://andreas-jeon.github.io/cosmos/",
     dataPath: "My workspace/Cosmos/_app/data.js",
-    scopes: ["Files.Read"]
+    scopes: ["Files.ReadWrite"]
   };
   var LOCAL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
   if (location.hostname !== "andreas-jeon.github.io") CFG.redirectUri = location.origin + location.pathname.replace(/index\.html$/, "");
