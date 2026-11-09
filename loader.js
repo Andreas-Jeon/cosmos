@@ -13,6 +13,7 @@
   var panel = document.getElementById("panel");
   var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]; }); };
   function show(title, body, btn, fn) {
+    var mm = document.querySelector("main"); if (mm) mm.classList.remove("nopanel");
     panel.innerHTML = "<h2>" + esc(title) + "</h2><p class=\"empty\">" + body + "</p>" + (btn ? "<button class=\"more\" id=\"ldbtn\">" + esc(btn) + "</button>" : "");
     if (btn) document.getElementById("ldbtn").onclick = fn;
   }

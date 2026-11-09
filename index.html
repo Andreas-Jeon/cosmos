@@ -111,11 +111,11 @@ details{margin:14px 0;color:var(--sub)}
     <button class="hb" id="bOut" title="로그아웃" aria-label="로그아웃">⏻</button>
   </div>
   <nav id="tabs">
+    <button data-v="map">은하</button>
     <button data-v="daily">오늘</button>
     <button data-v="write">쓰기</button>
     <button data-v="flow">흐름</button>
     <button data-v="find">찾기</button>
-    <button data-v="map">지도</button>
   </nav>
 </header>
 <main id="view"></main>
@@ -869,9 +869,14 @@ function md(text) {
 $("#bRef").onclick = () => { if (FILE_MODE) return location.reload(); token(true).then(tk => tk && refresh(tk, true).then(t => { if (t) { DATA = parseData(t); buildModel(); go(current); sync("새로 받음 " + hm(new Date())); } })).catch(e => banner("받지 못함: " + e.message)); };
 $("#bOut").onclick = () => { if (!pca || !confirm("로그아웃하고 이 기기에 저장된 색인을 지울까요? (저장 대기 중인 기록은 남음)")) return; put("text", "").then(() => put("etag", "")).then(() => pca.logoutRedirect({account: account()})); };
 function login(msg) { view.innerHTML = '<h2>Cosmos</h2><p class="empty">' + (msg || "나의 기억 공간. 내 OneDrive의 Cosmos 폴더를 읽고, 쓴 기록을 그곳에 남김.<br>처음 한 번 Microsoft 계정으로 로그인하고 파일 읽기·쓰기 권한을 허용하면 됨.") + '</p><button class="primary" id="bIn" style="margin:0">Microsoft 계정으로 로그인</button>'; $("#bIn").onclick = () => token(true); }
-function start(text) { try { DATA = typeof text === "string" ? parseData(text) : text; buildModel(); if (!start.once) { start.once = 1; const L = dailies(), last = L[L.length - 1]; current = last && !sheetAnswered((last.fm || {})["날짜"] || last.name) ? "daily" : "write"; } go(current); } catch (e) { view.innerHTML = '<p class="empty">색인을 읽지 못함: ' + esc(e.message) + "</p>"; } }
+function start(text) { try { DATA = typeof text === "string" ? parseData(text) : text; buildModel(); if (!start.once) { start.once = 1; const L = dailies(), last = L[L.length - 1]; const qv = (location.search.match(/[?&]v=(daily|write|flow|find|recall)\b/) || [])[1]; current = qv || (last && !sheetAnswered((last.fm || {})["날짜"] || last.name) ? "daily" : "write"); } go(current); } catch (e) { view.innerHTML = '<p class="empty">색인을 읽지 못함: ' + esc(e.message) + "</p>"; } }
 
 function main() {
+  /* 앱을 처음 열면 은하부터. 탭에서 넘어온 경우(?v=)와 로그인 직후(#code)는 그대로 */
+  if (!FILE_MODE && !LOCAL && !/[?&]v=/.test(location.search) && !/(code|error)=/.test(location.hash)) {
+    let seen = null; try { seen = sessionStorage.getItem("cosmosIn"); sessionStorage.setItem("cosmosIn", "1"); } catch (e) { seen = "1"; }
+    if (!seen) { location.replace("galaxy.html"); return; }
+  }
   document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-current", "false"));
   if ("serviceWorker" in navigator && !FILE_MODE && !LOCAL) navigator.serviceWorker.register("sw.js").catch(() => {});
   get("outbox").then(o => { OUTBOX = (o || []).map(x => ({rel: x.rel, text: x.text, note: Object.assign(noteOfText(x.rel, x.text), {pending: true})})); });

@@ -22,6 +22,10 @@ header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:14px
 .search::placeholder{color:var(--mute)}
 .stamp{font-size:12px;color:var(--mute)}
 main{display:grid;grid-template-columns:minmax(0,1fr) 420px;min-height:0}
+main.nopanel{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)!important}
+main.nopanel aside{display:none}
+.ptog{border:1px solid var(--line);background:none;border-radius:8px;height:36px;padding:0 12px;cursor:pointer;color:var(--sub);font-size:13px}
+.ptog[aria-pressed="true"]{border-color:var(--khaki);color:var(--text)}
 .sky{position:relative;min-height:0;background:var(--sky)}
 .sky canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
 .chips{position:absolute;left:14px;top:14px;right:70px;display:flex;flex-wrap:wrap;gap:6px}
@@ -76,6 +80,9 @@ aside h2{margin:0 0 4px;font-size:18px;font-weight:500}
 @media (max-width:900px){main{grid-template-columns:1fr;grid-template-rows:60vh auto}aside{border-left:0;border-top:1px solid var(--line)}}
 
 /* ---- mobile ---- */
+.gnav{order:10;width:100%;display:flex;gap:4px}
+.gnav a{flex:1 0 auto;min-height:40px;display:flex;align-items:center;justify-content:center;color:var(--sub);text-decoration:none;font-size:15px;border-bottom:2px solid transparent}
+.gnav a[aria-current="true"]{color:var(--text);border-bottom-color:var(--khaki)}
 .hdbtn{border:1px solid var(--line);background:none;border-radius:8px;min-width:36px;height:36px;cursor:pointer;color:var(--sub)}
 .ldbanner{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:9;min-height:44px;border-radius:10px;border:1px solid var(--orange);background:#2A2420;color:var(--text);font-size:14px}
 @media (max-width:900px){
@@ -100,15 +107,15 @@ aside h2{margin:0 0 4px;font-size:18px;font-weight:500}
 <body>
 <div class="app">
 <header>
-  <a class="brand" href="./" style="color:inherit;text-decoration:none">← Cosmos</a>
+  <div class="brand">Cosmos</div><nav class="gnav"><a aria-current="true">은하</a><a href="./?v=daily">오늘</a><a href="./?v=write">쓰기</a><a href="./?v=flow">흐름</a><a href="./?v=find">찾기</a></nav>
   <input class="search" id="q" type="search" placeholder="낱말 여러 개로 좁혀 찾기 (예: 태양 교정)" aria-label="검색">
-  <span class="stamp" id="stamp"></span><button class="hdbtn" onclick="cosmosRefresh()" aria-label="OneDrive에서 다시 받기" title="OneDrive에서 다시 받기">↻</button><button class="hdbtn" onclick="cosmosLogout()" aria-label="로그아웃" title="로그아웃">⏻</button>
+  <span class="stamp" id="stamp"></span><button class="hdbtn" onclick="cosmosRefresh()" aria-label="OneDrive에서 다시 받기" title="OneDrive에서 다시 받기">↻</button><button class="hdbtn" onclick="cosmosLogout()" aria-label="로그아웃" title="로그아웃">⏻</button><button class="ptog" id="ptog" aria-pressed="false" aria-label="목록 열기·닫기">목록</button>
 </header>
-<main>
+<main class="nopanel">
   <section class="sky" aria-label="지식 은하">
     <canvas id="cv" role="img" aria-label="Cosmos 폴더의 파일로 그린 은하. 중심은 나와 대문, 항성은 층, 행성은 파일"></canvas>
     <div class="chips" id="chips"></div>
-    <div class="zoom"><button id="zbig" aria-label="크게 보기" onclick="document.querySelector('main').classList.toggle('skybig')">⤢</button><button id="zspin" aria-label="회전 켜기·끄기" aria-pressed="false" title="회전">⟳</button><button id="zin" aria-label="확대">+</button><button id="zout" aria-label="축소">−</button></div>
+    <div class="zoom"><button id="zbig" aria-label="크게 보기" onclick="document.querySelector('main').classList.toggle('skybig')">⤢</button><button id="zspin" aria-label="회전 켜기·끄기" aria-pressed="true" title="회전">⟳</button><button id="zin" aria-label="확대">+</button><button id="zout" aria-label="축소">−</button></div>
     <div class="hint">끌어서 돌리기 · 두 손가락으로 확대 · 이름을 누르면 열림</div>
   </section>
   <aside id="panel" aria-live="polite"></aside>
@@ -120,6 +127,13 @@ aside h2{margin:0 0 4px;font-size:18px;font-weight:500}
 "use strict";
 const DATA = window.COSMOS_DATA;
 const panel = document.getElementById('panel');
+/* 오른쪽 목록: 기본은 접어 둠. 무언가를 누르거나 찾으면 저절로 펼침 */
+const mainEl = document.querySelector('main'), ptog = document.getElementById('ptog');
+const setPanel = on => { mainEl.classList.toggle('nopanel', !on); if (ptog) ptog.setAttribute('aria-pressed', String(on)); };
+if (ptog) { ptog.addEventListener('click', () => setPanel(mainEl.classList.contains('nopanel'))); setPanel(!mainEl.classList.contains('nopanel')); }
+let lastAct = 0;
+['pointerup', 'keyup', 'input'].forEach(ev => document.addEventListener(ev, e => { if (e.target !== ptog) lastAct = Date.now(); }, true));
+new MutationObserver(() => { if (Date.now() - lastAct < 1200 && mainEl.classList.contains('nopanel')) setPanel(true); }).observe(panel, {childList: true});
 if (!DATA) {
   panel.innerHTML = '<h2>색인이 없음</h2><p class="empty">업무 PC에서 Cosmos_open.bat 를 한 번 실행해 색인(data.js)을 만든 뒤 OneDrive 동기화가 끝나면 열림.</p>';
   return;
@@ -128,13 +142,11 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 document.getElementById('stamp').textContent = '색인 ' + DATA.generated;
 
 const SYS = [
-  {key:'principles', name:'원리', r:520, ph:0.3, col:'#A8A66A'},
-  {key:'cases', name:'사례', r:760, ph:1.9, col:'#D8D8D2'},
-  {key:'capabilities', name:'역량', r:1000, ph:3.4, col:'#C4C4BE'},
-  {key:'work', name:'일', r:1240, ph:4.6, col:'#C4C4BE'},
-  {key:'base', name:'삶의 기반', r:1460, ph:5.7, col:'#C4C4BE'},
-  {key:'library', name:'자료', r:1680, ph:2.6, col:'#B0B0AA'},
-  {key:'tools', name:'도구 상자', r:1680, ph:0.9, col:'#B0B0AA'}
+  {key:'card', keys:['card'], name:'별자리', r:520, ph:0.3, col:'#A8A66A'},
+  {key:'stream', keys:['stream'], name:'흐름', r:760, ph:1.9, col:'#D8D8D2'},
+  {key:'daily', keys:['daily'], name:'하루', r:1000, ph:3.4, col:'#C4C4BE'},
+  {key:'notes', keys:['principles','cases','capabilities','work','base'], name:'지난 노트', r:1240, ph:4.6, col:'#C4C4BE'},
+  {key:'tools', keys:['tools','library','log','root','other'], name:'도구 상자', r:1460, ph:5.7, col:'#B0B0AA'}
 ];
 const FILES = DATA.files;
 const byPath = {}, byName = {};
@@ -152,8 +164,8 @@ SRC.forEach((s, si) => s.items.forEach(it => { it.src = s.label; it.si = si; it.
 const resolve = l => { l = l.trim(); const base = l.replace(/\.md$/,''); const md = byPath[base] || (byName[base.split('/').pop()] || [])[0]; if (md) return md; const nm = l.split('/').pop().replace(/\.(pdf|url|docx?|pptx?|hwpx?|xlsx?|txt|html?)$/i,'').toLowerCase(); return (itemByName[nm] || [])[0] || null; };
 const keyOf = x => x.isItem ? 'item:' + x.full : x.path;
 const CL = [];
-/* 큰 분야 6개 (TMI 폴더 10~60 과 같은 순서) */
-const GROUPS = [
+/* 나선팔 = 주제(themes.csv 중 분야태그가 있는 주제). 이름은 괄호 속 한자를 뺀 쉬운 이름 */
+const OLD_GROUPS = [
   {name:'우주환경·전파천문', tags:['우주환경·태양전파','전파천문','전파전파·강우감쇠']},
   {name:'레이다·영상', tags:['레이다 시스템','SAR·검보정','우주상황인식','국방·전자전']},
   {name:'안테나·RF', tags:['안테나·RF부품','방향탐지·전파감시']},
@@ -161,8 +173,11 @@ const GROUPS = [
   {name:'신호처리·계측', tags:['신호처리','측정·시험장비']},
   {name:'정책·사업', tags:['주파수·전파정책','기술기획·사업']}
 ];
+const THEME_ARMS = (DATA.themes || []).filter(t => t['분야태그']).map(t => ({id:t.id, name:String(t['이름']).replace(/\s*\(.*?\)\s*/g, ''), en:t['영문'] || '', desc:t['설명'] || '', tags:String(t['분야태그']).split(';').map(x => x.trim()).filter(Boolean)}));
+const GROUPS = THEME_ARMS.length ? THEME_ARMS : OLD_GROUPS;
 const groupOfTag = t => GROUPS.findIndex(g => g.tags.includes(t));
-const groupIdx = c => c.name.startsWith('개발 · ') ? 4 : groupOfTag(c.name);
+const DEV_ARM = Math.max(0, GROUPS.findIndex(g => g.id === 'signal')) || 4;
+const groupIdx = c => c.name.startsWith('개발 · ') ? DEV_ARM : groupOfTag(c.name);
 const HAS_TAGS = ITEMS.some(it => it.fields.length);
 let clMode = HAS_TAGS ? 'field' : 'folder';
 /* 성단 묶음: 분야(태그 첫 번째) 또는 폴더. 태그 없는 자료는 폴더 이름으로 묶음 */
@@ -205,8 +220,8 @@ const setHL = (arr, from) => { HL = {set:new Set(arr), from}; };
 const incoming = {};
 FILES.forEach(f => f.links.forEach(l => { const t = resolve(l); if (t) (incoming[keyOf(t)] = incoming[keyOf(t)] || []).push(f); }));
 SYS.forEach(s => {
-  s.files = FILES.filter(f => f.layer === s.key && f.kind === 'file');
-  s.meta = FILES.filter(f => f.layer === s.key && f.kind === 'meta');
+  s.files = FILES.filter(f => s.keys.includes(f.layer) && f.kind === 'file');
+  s.meta = FILES.filter(f => s.keys.includes(f.layer) && f.kind === 'meta');
   const n = s.files.length, span = Math.min(120, 15 * Math.max(n, 1));
   s.pl = s.files.map((f, k) => {
     const R = 34 + (n > 1 ? k * span / (n - 1) : 0);
@@ -266,7 +281,7 @@ function md(text){
 
 /* ---------- panel views ---------- */
 let selected = null;
-const layerName = k => ({center:'나·대문', principles:'원리', cases:'사례', capabilities:'역량', work:'일', base:'삶의 기반', library:'자료', tools:'도구 상자', log:'기록', root:'Cosmos', other:'기타'})[k] || k;
+const layerName = k => ({center:'나', card:'별자리', stream:'흐름', daily:'하루', principles:'지난 노트', cases:'지난 노트', capabilities:'지난 노트', work:'지난 노트', base:'지난 노트', library:'도구 상자', tools:'도구 상자', log:'기록', root:'Cosmos', other:'기타'})[k] || k;
 function itemHtml(f){
   if (f.isItem) return '<button class="item" data-full="' + esc(f.full) + '">' + stars(f.imp) + esc(f.name) + '<small>' + esc((f.fields[0] ? f.fields[0] + ' · ' : '') + (f.folder || '(최상위)') + ' · ' + f.ext.slice(1).toUpperCase()) + '</small></button>';
   return '<button class="item" data-path="' + esc(f.path) + '">' + esc(f.title) + '<small>' + esc(layerName(f.layer)) + ' · ' + esc(f.mtime) + '</small></button>';
@@ -284,7 +299,7 @@ function showSource(k){
     '<div class="stat"><div class="v">' + cls.length + '</div><div class="l">주제 성단</div></div></div>' +
     (HAS_TAGS ? '<div class="facets"><button class="facet" id="mfield" aria-pressed="' + (clMode === 'field') + '">분야별 성단</button><button class="facet" id="mfolder" aria-pressed="' + (clMode === 'folder') + '">폴더별 성단</button></div>' : '') +
     '<div class="sec">' + (clMode === 'field' ? '분야 성단' : '폴더 성단') + ' (자료 많은 순)</div><div class="list">' +
-    cls.slice().sort((a, b) => (a.gi < 0) - (b.gi < 0) || a.gi - b.gi).map((c, k, arr) => (clMode === 'field' && c.gi >= 0 && (k === 0 || arr[k - 1].gi !== c.gi) ? '<div class="sec" style="margin-top:14px">' + esc((c.gi + 1) + '. ' + GROUPS[c.gi].name) + '</div>' : '') + '<button class="item" data-ci="' + CL.indexOf(c) + '">' + esc(c.name) + '<small>' + c.items.length + '개' + (c.items.some(x => x.imp) ? ' · ★ ' + c.items.filter(x => x.imp).length : '') + '</small></button>').join('') + '</div>' +
+    cls.slice().sort((a, b) => (a.gi < 0) - (b.gi < 0) || a.gi - b.gi).map((c, k, arr) => (clMode === 'field' && c.gi >= 0 && (k === 0 || arr[k - 1].gi !== c.gi) ? '<div class="sec" style="margin-top:14px">' + esc(GROUPS[c.gi].name) + '</div>' : '') + '<button class="item" data-ci="' + CL.indexOf(c) + '">' + esc(c.name) + '<small>' + c.items.length + '개' + (c.items.some(x => x.imp) ? ' · ★ ' + c.items.filter(x => x.imp).length : '') + '</small></button>').join('') + '</div>' +
     workListHtml();
   panel.querySelectorAll('[data-ci]').forEach(b => b.addEventListener('click', () => { flyTo(1000 + +b.dataset.ci); showCluster(+b.dataset.ci); }));
   const mf = document.getElementById('mfield'), mo = document.getElementById('mfolder');
@@ -309,18 +324,16 @@ function showWork(w){
   document.getElementById('back').addEventListener('click', () => { setHL([]); showOverview(); });
   bindItems(); panel.scrollTop = 0;
 }
-/* 분야 하나의 흐름: 자료 → 원리 → 일 → 사례. 빈 칸이 바로 보이게 */
+/* 주제 하나에 모인 내 기록: 별자리(자료 카드) → 흐름(내 글) */
 function flowHtml(tags){
-  const notes = k => FILES.filter(n => n.kind === 'file' && n.layer === k && n.fields.some(t => tags.includes(t)));
+  const notes = keys => FILES.filter(n => n.kind === 'file' && keys.includes(n.layer) && (n.fields || []).some(t => tags.includes(t)));
   const step = (title, arr, empty) => '<div class="sec">' + title + ' ' + arr.length + '</div>' + (arr.length ? '<div class="list">' + arr.map(itemHtml).join('') + '</div>' : '<p class="empty">' + empty + '</p>');
-  return step('원리 TM', notes('principles'), '아직 없음. 이 분야 사례가 2~3개 모이면 원리 TM으로 올릴 차례') +
-    step('일', notes('work'), '이 분야로 표시된 일 파일 없음 (일 파일 앞머리에 "분야:" 를 적으면 연결됨)') +
-    step('사례', notes('cases'), '아직 없음');
+  return step('별자리 (자료 카드)', notes(['card']), '아직 없음') + step('흐름 (내가 쓴 글)', notes(['stream']), '아직 없음');
 }
 function showGroup(gi){
   const g = GROUPS[gi], list = ITEMS.filter(it => it.fields.some(t => g.tags.includes(t))).sort(byImp); selected = null; setHL(list, null);
   const ci = CL.findIndex(c => c.gi === gi); if (ci >= 0) flyTo(1000 + ci); else flyTo(-3);
-  panel.innerHTML = '<button class="back" id="back">← 전체</button><h2>' + esc(g.name) + '</h2><p class="path">자료 ' + list.length + '개 · ★ ' + list.filter(x => x.imp).length + '</p>' +
+  panel.innerHTML = '<button class="back" id="back">← 전체</button><h2>' + esc(g.name) + '</h2><p class="path">' + esc((g.en ? g.en + ' · ' : '') + (g.desc ? g.desc + ' · ' : '')) + '자료 ' + list.length + '개 · ★ ' + list.filter(x => x.imp).length + '</p>' +
     '<div class="facets">' + g.tags.filter(t => FIELDS[t]).map(t => '<button class="facet" data-field="' + esc(t) + '">' + esc(t) + '<span class="n">' + FIELDS[t].length + '</span></button>').join('') + '</div>' +
     flowHtml(g.tags) +
     '<div class="sec">자료 (★ 많은 순)</div><div class="list">' + list.slice(0, 60).map(itemHtml).join('') + '</div>' + (list.length > 60 ? '<p class="empty">… 분야 버튼을 누르면 전체 목록</p>' : '');
@@ -388,7 +401,7 @@ function showOverview(){
     (impList.length ? '<div class="sec">중요 표시 자료 ' + impList.length + '개 (★ 많은 순)</div><div class="list">' + impList.slice(0, impShown).map(itemHtml).join('') + '</div>' +
       (impList.length > impShown ? '<button class="more" id="impmore">더 보기 (' + (impList.length - impShown) + '개 남음)</button>' : '') : '') +
     workListHtml() +
-    (Object.keys(FIELDS).length ? '<div class="sec">큰 분야 (나선팔)</div><div class="list">' + GROUPS.map((g, gi) => { const n = ITEMS.filter(it => it.fields.some(t => g.tags.includes(t))).length, p = FILES.filter(f => f.layer === 'principles' && f.fields.some(t => g.tags.includes(t))).length; return '<button class="item" data-group="' + gi + '">' + esc((gi + 1) + '. ' + g.name) + '<small>자료 ' + n + ' · 원리 TM ' + p + ' · ' + esc(g.tags.join(', ')) + '</small></button>'; }).join('') + '</div>' : '') +
+    (Object.keys(FIELDS).length ? '<div class="sec">주제 (나선팔)</div><div class="list">' + GROUPS.map((g, gi) => { const n = ITEMS.filter(it => it.fields.some(t => g.tags.includes(t))).length; return '<button class="item" data-group="' + gi + '">' + esc(g.name + (g.en ? ' · ' + g.en : '')) + '<small>자료 ' + n + ' · ' + esc(g.desc || g.tags.join(', ')) + '</small></button>'; }).join('') + '</div>' : '') +
     '<div class="sec">최근 수정</div><div class="list">' + recent.map(itemHtml).join('') + '</div>' +
     (centerFile ? '<div class="sec">대문</div><div class="list">' + itemHtml(centerFile) + '</div>' : '');
   const im = document.getElementById('impmore'); if (im) im.addEventListener('click', () => { impShown += 15; showOverview(); });
@@ -403,7 +416,7 @@ function showSystem(i){
 }
 function openFile(f){
   if (!f) return; selected = f;
-  const si = SYS.findIndex(s => s.key === f.layer);
+  const si = SYS.findIndex(s => s.keys.includes(f.layer));
   if (si >= 0 && focus !== si) { flyTo(si); }
   markChip(si);
   const out = f.links.map(l => resolve(l)).filter(Boolean), inc = incoming[keyOf(f)] || [];
@@ -699,7 +712,7 @@ const up = e => {
 };
 cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
 
-let SPIN = false; /* 자동 회전: 기본 꺼짐, 회전 버튼으로 켬 */
+let SPIN = true; /* 자동 회전: 기본 켜짐, 회전 버튼으로 끔 */
 const spinBtn = document.getElementById('zspin'); if (spinBtn) spinBtn.onclick = () => { SPIN = !SPIN; spinBtn.setAttribute('aria-pressed', String(SPIN)); };
 function draw(t){
   const W = cv.clientWidth, H = cv.clientHeight, dpr = Math.min(2, devicePixelRatio || 1);
@@ -732,7 +745,7 @@ function draw(t){
   const ca = Math.cos(AL), sa = Math.sin(AL), pulse = .65 + .35*Math.sin(t/380);
   hits = []; const labs = [];
   const q0 = proj(0,0,0);
-  if (q0) { hits.push({x:q0[0], y:q0[1], r:28, sys:-1}); if (lA > .05) labs.push({x:q0[0]+12, y:q0[1]+16, t:'나 · 대문', c:'#A4A49D', a:lA}); }
+  if (q0) { hits.push({x:q0[0], y:q0[1], r:28, sys:-1}); if (lA > .05) labs.push({x:q0[0]+12, y:q0[1]+16, t:'나', c:'#A4A49D', a:lA}); }
   for (let i = 0; i < SYS.length; i++) {
     const S = SYS[i], st = starPos(i, sim), q = proj(st[0], st[1], st[2]); if (!q) continue;
     const cS = cl((700 - q[2]) / 450, 0, 1);
@@ -791,7 +804,7 @@ function draw(t){
   if (clMode === 'field' && lA > .05) GROUPS.forEach((gr, gi) => {
     const c = CL.find(x => x.gi === gi); if (!c) return;
     const p0 = clPos(c, rot), q = proj(p0[0] * .8, p0[1] - 230, p0[2] * .8); if (!q) return;
-    labs.push({x:q[0], y:q[1], t:(gi + 1) + '. ' + gr.name, c:'#E2D58E', a:lA, big:1});
+    labs.push({x:q[0], y:q[1], t:gr.name, c:'#E2D58E', a:lA, big:1});
   });
   /* 연결선: 업무 → 중심(나)에서 각 자료로, 자료 → 관련 자료로 */
   if (HL.set.size) {
