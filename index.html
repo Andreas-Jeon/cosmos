@@ -61,6 +61,7 @@ mark{background:none;color:var(--orange);font-weight:500}
 .md h3,.md h4{font-size:14px;color:var(--sub);margin:16px 0 4px}
 .md p{margin:6px 0}
 .md ul{margin:4px 0;padding-left:20px}
+.md li.sub{margin-left:18px;list-style:circle;color:var(--sub)}
 .md blockquote{margin:8px 0;padding:6px 12px;border-left:2px solid var(--khaki);color:var(--sub)}
 .md table{border-collapse:collapse;width:100%;font-size:13.5px;margin:8px 0;display:block;overflow-x:auto}
 .md th,.md td{border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
@@ -94,6 +95,8 @@ details{margin:14px 0;color:var(--sub)}
 .stari.big{width:140px;height:140px}
 .sname{clear:right;float:right;font-size:11.5px;color:var(--khaki-l);margin:-4px 0 6px 12px;max-width:140px;text-align:right}
 .sv line,.sv path{stroke:#6a6a62;stroke-width:1}.sv .d{fill:#ECECE8}.sv .b{fill:#C9C68A}.sv .g{fill:#C9C68A;opacity:.2}.sv text{fill:#8B8B85;font-size:6.5px;font-family:sans-serif}
+.brief{border:1px solid var(--line);border-left:3px solid var(--khaki);border-radius:10px;padding:10px 14px;margin:0 0 16px;background:var(--panel)}
+.brief .bt{font-size:12px;color:var(--mute)}.brief .b1{margin:4px 0 8px;font-size:15px;line-height:1.6}
 .piece::after{content:"";display:block;clear:both}summary{cursor:pointer;min-height:36px}
 @media print{.sv .d{fill:#111}.sv .b,.sv .g{fill:#5c5b30}.sv line,.sv path{stroke:#888}
  header,.noprint,nav,#banner{display:none!important}body{background:#fff;color:#111;font-size:11pt}
@@ -487,9 +490,9 @@ function snippet(body, vars){
 let current = "write", detailStack = [];
 function go(v) {
   current = v; detailStack = [];
-  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-current", String(b.dataset.v === v)));
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-current", String(b.dataset.v === (v === "brief" ? "daily" : v))));
   if (v === "map") { location.href = "galaxy.html" + (FILE_MODE || LOCAL ? "?local" : ""); return; }
-  ({daily: showDaily, write: showWrite, flow: showFlow, recall: showRecall, find: showFind})[v]();
+  ({daily: showDaily, brief: showBrief, write: showWrite, flow: showFlow, recall: showRecall, find: showFind})[v]();
   window.scrollTo(0, 0);
 }
 document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => go(b.dataset.v));
@@ -719,9 +722,58 @@ function starSvg(st, cls) {
   return h + "</svg></div>" + (st.name ? '<div class="sname">' + esc(st.name) + "</div>" : "");
 }
 
+/* ---------- 일정 브리핑 (02_daily/brief/YYYY-MM-DD_am|pm.md, 오전·오후 비서가 씀) ---------- */
+/* 색인(data.js)은 1시간마다 갱신되므로, 로그인 상태면 OneDrive 폴더에서 바로 읽어 방금 쓴 브리핑도 보이게 함 */
+const BRIEF_DIR = "02_daily/brief", BRIEF_RE = /^\d{4}-\d\d-\d\d_(am|pm)\.md$/;
+let BRIEFS = null, briefIdx = -1;
+const briefsIndexed = () => FILES.filter(f => f.path.startsWith(BRIEF_DIR + "/") && BRIEF_RE.test(f.path.split("/").pop())).map(f => ({name: f.name, text: f.text}));
+function loadBriefs(force) {
+  if (BRIEFS && !force) return Promise.resolve(BRIEFS);
+  const have = {}; briefsIndexed().forEach(b => have[b.name] = b);
+  const done = () => (BRIEFS = Object.values(have).sort((a, b) => a.name.localeCompare(b.name)));
+  if (FILE_MODE) return Promise.resolve(done());
+  return token(false).then(tk => {
+    if (!tk) return done();
+    return graph("/me/drive/root:/" + enc(CFG.root + "/" + BRIEF_DIR) + ":/children?$select=name,id&$top=500", tk).then(r => {
+      const files = (r.value || []).filter(x => BRIEF_RE.test(x.name)).sort((a, b) => a.name.localeCompare(b.name));
+      const need = files.filter((x, i) => !have[x.name.replace(/\.md$/, "")] || i === files.length - 1).slice(-6);
+      return Promise.all(need.map(x => fetch("https://graph.microsoft.com/v1.0/me/drive/items/" + x.id + "/content", {headers: {Authorization: "Bearer " + tk}})
+        .then(res => res.ok ? res.text() : null).then(t => { if (t) have[x.name.replace(/\.md$/, "")] = {name: x.name.replace(/\.md$/, ""), text: t.replace(/^﻿/, "")}; }).catch(() => {})));
+    }).catch(() => {}).then(done);
+  }).catch(done);
+}
+function briefTop(text) {
+  const sec = sectionsOf(text), k = sec.order.find(x => /^오늘 (꼭 할 일|남은 일)/.test(x));
+  const l = k ? sec[k].split("\n").find(x => /^\s*(?:\d+\.|-)\s+/.test(x)) : "";
+  return {title: (sec._h || "").split("\n")[0].trim(), first: (l || "").replace(/^\s*(?:\d+\.|-)\s+/, "")};
+}
+function fillBriefBox() {
+  const box = $("#briefBox"); if (!box) return;
+  loadBriefs().then(L => {
+    if (!$("#briefBox") || !L.length) { if ($("#briefBox")) $("#briefBox").hidden = true; return; }
+    const b = L[L.length - 1], t = briefTop(b.text), today = b.name.startsWith(ymd(new Date()));
+    box.innerHTML = '<div class="bt">' + esc(today ? t.title : "최근 브리핑 · " + t.title) + "</div>" +
+      (t.first ? '<div class="b1">1순위 · ' + inline(t.first) + "</div>" : "") + '<button class="btn" id="bBrief">브리핑 전체 보기</button>';
+    box.hidden = false; $("#bBrief").onclick = () => { briefIdx = L.length - 1; go("brief"); };
+  });
+}
+function showBrief() {
+  view.innerHTML = '<p class="quiet">브리핑을 읽는 중…</p>';
+  loadBriefs(true).then(L => {
+    if (current !== "brief") return;
+    if (!L.length) { view.innerHTML = '<h2>일정 브리핑</h2><p class="empty">아직 브리핑이 없음. 평일 08:20·13:20에 비서가 02_daily/brief 에 씀.</p>'; return; }
+    if (briefIdx < 0 || briefIdx >= L.length) briefIdx = L.length - 1;
+    const b = L[briefIdx];
+    view.innerHTML = '<div class="dnav"><button class="btn" id="bToday">← 오늘</button><button class="btn" id="bPrev"' + (briefIdx ? "" : " disabled") + '>‹ 이전</button><button class="btn" id="bNext"' + (briefIdx < L.length - 1 ? "" : " disabled") + ">다음 ›</button></div>" +
+      '<div class="md">' + md(bodyOf(b.text)) + '</div><p class="quiet">원본: OneDrive의 Cosmos/' + esc(BRIEF_DIR + "/" + b.name) + ".md</p>";
+    $("#bToday").onclick = () => go("daily");
+    $("#bPrev").onclick = () => { briefIdx--; showBrief(); }; $("#bNext").onclick = () => { briefIdx++; showBrief(); };
+  });
+}
+
 /* ---------- 오늘 (일일 학습지) ---------- */
 let dailyIdx = -1;
-const dailies = () => FILES.filter(f => f.layer === "daily" && f.kind === "file").sort((a, b) => a.name.localeCompare(b.name));
+const dailies = () => FILES.filter(f => f.layer === "daily" && f.kind === "file" && !f.path.startsWith(BRIEF_DIR + "/")).sort((a, b) => a.name.localeCompare(b.name));
 const sheetAnswered = d => allNotes().some(n => n.body.startsWith("# COSMOS DAILY") && n.body.split("\n")[0].includes(d));
 function recallLink() {
   const n = queue().length;
@@ -733,13 +785,14 @@ function sectionsOf(text) {
 }
 function showDaily() {
   const L = dailies();
-  if (!L.length) { view.innerHTML = '<h2>오늘</h2><p class="empty">아직 학습지가 없음. 업무 PC가 자료 카드로 하루 한 장씩 만듦 (1시간마다 확인).</p>' + recallLink(); bindRecallLink(); return; }
+  const BOX = '<div class="brief noprint" id="briefBox" hidden></div>';
+  if (!L.length) { view.innerHTML = BOX + '<h2>오늘</h2><p class="empty">아직 학습지가 없음. 업무 PC가 자료 카드로 하루 한 장씩 만듦 (1시간마다 확인).</p>' + recallLink(); bindRecallLink(); fillBriefBox(); return; }
   if (dailyIdx < 0 || dailyIdx >= L.length) dailyIdx = L.length - 1;
   const f = L[dailyIdx], sec = sectionsOf(f.text), d = (f.fm || {})["날짜"] || f.name, done = sheetAnswered(d);
   const quiz = (sec["퀴즈"] || "").split("\n").map(l => l.match(/^(\d+)\.\s+(.*?)(?:\s+｜\s+(.*))?$/)).filter(Boolean);
   const ans = (sec["정답"] || "").split("\n").map(l => l.replace(/^-\s*\d+\.\s*/, "").trim()).filter(Boolean);
   const pieces = sec.order.filter(k => /^\d+\.\s/.test(k));
-  let h = '<div class="dnav noprint"><button class="btn" id="dPrev"' + (dailyIdx ? "" : " disabled") + '>‹ 지난 호</button><button class="btn" id="dNext"' + (dailyIdx < L.length - 1 ? "" : " disabled") + '>다음 호 ›</button><button class="btn" id="dPrint" style="margin-left:auto">인쇄</button></div>' +
+  let h = BOX + '<div class="dnav noprint"><button class="btn" id="dPrev"' + (dailyIdx ? "" : " disabled") + '>‹ 지난 호</button><button class="btn" id="dNext"' + (dailyIdx < L.length - 1 ? "" : " disabled") + '>다음 호 ›</button><button class="btn" id="dPrint" style="margin-left:auto">인쇄</button></div>' +
     '<div class="mast"><b>COSMOS DAILY</b><span>' + esc((sec._h || "").replace(/^COSMOS DAILY\s*·\s*/, "")) + "</span></div>";
   if (sec["오늘의 한 줄"]) { const t = sec["오늘의 한 줄"].split("\n"); h += '<div class="one" style="font-size:17px">' + esc(t[0].replace(/^>\s*/, "")) + '</div><p class="quiet">' + esc((t.find(x => x.startsWith("—")) || "").replace(/^—\s*/, "")) + "</p>"; }
   pieces.forEach(k => {
@@ -757,7 +810,7 @@ function showDaily() {
     '<span class="quiet" id="dPh"></span><button class="primary" id="dSend"' + (done || FILE_MODE ? " disabled" : "") + ">" + (done ? "제출함" : "제출하고 답 보기") + "</button></div>";
   if (sec["어제의 답"]) h += "<details><summary>어제의 답</summary>" + md(sec["어제의 답"]) + "</details>";
   view.innerHTML = h + recallLink();
-  bindRecallLink();
+  bindRecallLink(); fillBriefBox();
   $("#dPrev").onclick = () => { dailyIdx--; showDaily(); }; $("#dNext").onclick = () => { dailyIdx++; showDaily(); };
   $("#dPrint").onclick = () => window.print();
   $("#dPhoto").onchange = e => uploadPhotos(d, Array.from(e.target.files || []));
@@ -856,7 +909,7 @@ function md(text) {
     if (tbl) close();
     let m;
     if ((m = l.match(/^(#{1,4})\s+(.*)/))) { close(); h += "<h" + m[1].length + ">" + inline(m[2]) + "</h" + m[1].length + ">"; }
-    else if ((m = l.match(/^\s*(?:[-*]|\d+\.)\s+(.*)/))) { if (!list) { h += "<ul>"; list = true; } h += "<li>" + inline(m[1]) + "</li>"; }
+    else if ((m = l.match(/^\s*(?:[-*]|\d+\.)\s+(.*)/))) { if (!list) { h += "<ul>"; list = true; } h += (/^\s{2,}/.test(raw) ? '<li class="sub">' : "<li>") + inline(m[1]) + "</li>"; }
     else if ((m = l.match(/^>\s?(.*)/))) { close(); h += "<blockquote>" + inline(m[1]) + "</blockquote>"; }
     else if (!l.trim()) close();
     else if (list && /^\s{2,}/.test(raw)) h = h.replace(/<\/li>$/, "<br>" + inline(l.trim()) + "</li>");
@@ -869,7 +922,7 @@ function md(text) {
 $("#bRef").onclick = () => { if (FILE_MODE) return location.reload(); token(true).then(tk => tk && refresh(tk, true).then(t => { if (t) { DATA = parseData(t); buildModel(); go(current); sync("새로 받음 " + hm(new Date())); } })).catch(e => banner("받지 못함: " + e.message)); };
 $("#bOut").onclick = () => { if (!pca || !confirm("로그아웃하고 이 기기에 저장된 색인을 지울까요? (저장 대기 중인 기록은 남음)")) return; put("text", "").then(() => put("etag", "")).then(() => pca.logoutRedirect({account: account()})); };
 function login(msg) { view.innerHTML = '<h2>Cosmos</h2><p class="empty">' + (msg || "나의 기억 공간. 내 OneDrive의 Cosmos 폴더를 읽고, 쓴 기록을 그곳에 남김.<br>처음 한 번 Microsoft 계정으로 로그인하고 파일 읽기·쓰기 권한을 허용하면 됨.") + '</p><button class="primary" id="bIn" style="margin:0">Microsoft 계정으로 로그인</button>'; $("#bIn").onclick = () => token(true); }
-function start(text) { try { DATA = typeof text === "string" ? parseData(text) : text; buildModel(); if (!start.once) { start.once = 1; const L = dailies(), last = L[L.length - 1]; const qv = (location.search.match(/[?&]v=(daily|write|flow|find|recall)\b/) || [])[1]; current = qv || (last && !sheetAnswered((last.fm || {})["날짜"] || last.name) ? "daily" : "write"); } go(current); } catch (e) { view.innerHTML = '<p class="empty">색인을 읽지 못함: ' + esc(e.message) + "</p>"; } }
+function start(text) { try { DATA = typeof text === "string" ? parseData(text) : text; buildModel(); if (!start.once) { start.once = 1; const L = dailies(), last = L[L.length - 1]; const qv = (location.search.match(/[?&]v=(daily|brief|write|flow|find|recall)\b/) || [])[1]; current = qv || (last && !sheetAnswered((last.fm || {})["날짜"] || last.name) ? "daily" : "write"); } go(current); } catch (e) { view.innerHTML = '<p class="empty">색인을 읽지 못함: ' + esc(e.message) + "</p>"; } }
 
 function main() {
   /* 앱을 처음 열면 은하부터. 탭에서 넘어온 경우(?v=)와 로그인 직후(#code)는 그대로 */
